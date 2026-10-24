@@ -86,7 +86,7 @@ const previewI18n = {
       editablePptxRangeTip: "如果只想导出特定页面，请在左侧侧栏上方点「多选」勾选要导出的页面后再点击「导出」。",
       editablePptxStartExport: "开始导出",
       editablePptxCancel: "取消",
-      codiaExportProgress: "Codia 转换进度",
+      codiaExportProgress: "导出处理进度",
       exportSelectedPages: "将导出选中的 {{count}} 页",
       regenerate: "重新生成", regenerating: "生成中...",
       editMode: "编辑模式", viewMode: "查看模式", page: "第 {{num}} 页",
@@ -224,7 +224,7 @@ const previewI18n = {
       editablePptxRangeTip: "To export specific pages only, click \"Multi-select\" at the top of the left sidebar and check the pages first.",
       editablePptxStartExport: "Start Export",
       editablePptxCancel: "Cancel",
-      codiaExportProgress: "Codia conversion progress",
+      codiaExportProgress: "Export progress",
       exportSelectedPages: "Will export {{count}} selected page(s)",
       regenerate: "Regenerate", regenerating: "Generating...",
       editMode: "Edit Mode", viewMode: "View Mode", page: "Page {{num}}",
@@ -1704,10 +1704,16 @@ export const SlidePreview: React.FC = () => {
 
       triggerDownload(pptUrl);
       setShowEditablePptxDialog(false);
-      show({ message: 'Codia 已生成可编辑 PPTX，下载已开始。', type: 'success' });
+      show({ message: '已生成可编辑 PPTX，下载已开始。', type: 'success' });
     } catch (error: any) {
+      const rawMessage = typeof error?.message === 'string' ? error.message : '';
+      // Never expose provider names, endpoints, or credential details in the
+      // export dialog. Keep unexpected provider errors user-facing and clear.
+      const exportMessage = /codia|openapi|api\s*key|whsec_/i.test(rawMessage)
+        ? 'PPT 转换失败，请检查导出配置后重试。'
+        : rawMessage || 'PPT 转换失败，请检查配置后重试。';
       show({
-        message: error?.message || 'Codia PPT 转换失败，请检查 API Key 后重试。',
+        message: exportMessage,
         type: 'error',
       });
     } finally {
