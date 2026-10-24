@@ -27,7 +27,7 @@ _project_root = Path(__file__).parent.parent
 _env_file = _project_root / '.env'
 load_dotenv(dotenv_path=_env_file, override=not os.getenv('DATABASE_PATH'))
 
-from flask import Flask
+from flask import Flask, send_file
 from flask_cors import CORS
 from models import db
 from config import Config, DEFAULT_BACKEND_PORT, DEFAULT_FRONTEND_PORT
@@ -35,6 +35,7 @@ from controllers.material_controller import material_bp, material_global_bp
 from controllers.reference_file_controller import reference_file_bp
 from controllers.settings_controller import settings_bp
 from controllers.openai_oauth_controller import openai_oauth_bp
+from controllers.codia_controller import codia_bp
 from controllers import project_bp, page_bp, template_bp, user_template_bp, user_style_template_bp, export_bp, file_bp, style_bp, template_assets_bp, page_template_bp, template_mode_bp
 
 
@@ -159,6 +160,7 @@ def create_app():
     app.register_blueprint(reference_file_bp, url_prefix='/api/reference-files')
     app.register_blueprint(settings_bp)
     app.register_blueprint(openai_oauth_bp)
+    app.register_blueprint(codia_bp)
     app.register_blueprint(style_bp)
 
     with app.app_context():
@@ -211,6 +213,36 @@ def create_app():
     @app.route('/health')
     def health_check():
         return {'status': 'ok', 'message': 'Banana Slides API is running'}
+
+    # Serve the Edit PPT teaching-scenario page over HTTP. In the web/Docker
+    # build the page is copied into frontend/public/edit-ppt and served by
+    # nginx; this backend route remains available for direct backend access and
+    # desktop/source deployments. EDIT_PPT_ROOT allows packaged deployments to
+    # choose an explicit resource directory without depending on Windows paths.
+    configured_scenario_root = os.getenv('EDIT_PPT_ROOT', '').strip()
+    scenario_roots = []
+    if configured_scenario_root:
+        scenario_roots.append(Path(configured_scenario_root))
+    scenario_roots.extend([
+        _project_root / 'frontend' / 'public' / 'edit-ppt',
+        Path(__file__).resolve().parents[2],
+    ])
+    teaching_scenario_root = next(
+        (root for root in scenario_roots if (root / 'main.html').is_file()),
+        scenario_roots[0],
+    )
+
+    @app.route('/edit-ppt/main.html')
+    def teaching_scenario_page():
+        return send_file(teaching_scenario_root / 'main.html')
+
+    @app.route('/edit-ppt/ppt-generator.js')
+    def teaching_scenario_script():
+        return send_file(teaching_scenario_root / 'ppt-generator.js')
+
+    @app.route('/edit-ppt/edit-banana.jpg')
+    def teaching_scenario_logo():
+        return send_file(teaching_scenario_root / 'edit-banana.jpg', mimetype='image/jpeg')
 
     # Access code verification
     @app.route('/api/access-code/check', methods=['GET'])

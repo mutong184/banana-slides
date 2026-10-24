@@ -53,6 +53,7 @@
 !docs/superpowers/specs/*.md
 !docs/superpowers/plans/*.md
 !docs/desktop-handover.md
+!deploy/**/*.md
 !.github/**/*.md
 *.pyc
 .env

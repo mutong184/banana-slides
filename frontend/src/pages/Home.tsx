@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Sparkles, FileText, FileEdit, ImagePlus, Paperclip, Palette, Lightbulb, Search, Settings, FolderOpen, HelpCircle, Sun, Moon, Globe, Monitor, ChevronDown, Upload, RefreshCw, FilePlus, ArrowRight, X } from 'lucide-react';
+import { Sparkles, FileText, FileEdit, ImagePlus, Paperclip, Palette, Lightbulb, Search, Settings, FolderOpen, HelpCircle, Sun, Moon, Globe, Monitor, ChevronDown, Upload, RefreshCw, FilePlus, ArrowRight, X, MessageSquare } from 'lucide-react';
 import { Button, Card, useToast, MaterialGeneratorModal, MaterialCenterModal, MaterialSelector, ReferenceFileList, ReferenceFileSelector, FilePreviewModal, HelpModal, Footer, GithubRepoCard, TextStyleSelector } from '@/components/shared';
 import { MarkdownTextarea, type MarkdownTextareaRef } from '@/components/shared/MarkdownTextarea';
 import { TemplateSelector, getTemplateFile } from '@/components/shared/TemplateSelector';
@@ -14,11 +14,26 @@ import { useTheme } from '@/hooks/useTheme';
 import { useImagePaste, buildMaterialsMarkdown } from '@/hooks/useImagePaste';
 import type { Material } from '@/types';
 import { useT } from '@/hooks/useT';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/edit-banana.jpg';
 import { ASPECT_RATIO_OPTIONS } from '@/config/aspectRatio';
 import { isDesktop } from '@/utils';
 
 type CreationType = 'idea' | 'outline' | 'description' | 'ppt_renovation';
+
+const fileToDataUrl = (file: File): Promise<string> => new Promise((resolve) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result || ''));
+  reader.onerror = () => resolve('');
+  reader.readAsDataURL(file);
+});
+
+const dataUrlToFile = async (dataUrl: string, fileName: string, type?: string): Promise<File> => {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return new File([blob], fileName || 'teaching-template.jpg', {
+    type: type || blob.type || 'image/jpeg',
+  });
+};
 
 // 支持作为参考文件上传的文档扩展名（与后端 file_parser_service 保持一致）
 const ALLOWED_DOC_EXTENSIONS = ['pdf', 'docx', 'pptx', 'doc', 'ppt', 'xlsx', 'xls', 'csv', 'txt', 'md'];
@@ -35,23 +50,23 @@ const homeI18n = {
       theme: { label: '主题模式', light: '浅色', dark: '深色', system: '跟随系统' }
     },
     home: {
-      title: '蕉幻',
-      subtitle: 'Vibe your slides like vibe coding',
-      tagline: '基于 nano banana pro 的原生 AI PPT 生成器',
+      title: 'PPT Edit',
+      subtitle: '面向中小学科学教育场景的课件生成系统',
+      tagline: '通过多轮对话引导生成结构严谨、风格统一的可编辑 PPT',
       features: {
-        oneClick: '一句话生成 PPT',
-        naturalEdit: '自然语言修改',
-        regionEdit: '指定区域编辑',
-        export: '一键导出 PPTX/PDF',
+        oneClick: '多轮对话生成',
+        naturalEdit: '可编辑 PPTX',
+        regionEdit: '科学课件结构化',
+        export: '统一风格导出',
       },
       tabs: {
-        idea: '一句话生成',
+        idea: '多轮对话引导生成 PPT',
         outline: '从大纲生成',
         description: '从描述生成',
         ppt_renovation: 'PPT 翻新',
       },
       tabDescriptions: {
-        idea: '输入你的想法，AI 将为你生成完整的 PPT',
+        idea: '通过多轮对话逐步明确教学目标、实验内容与页面结构',
         outline: '已有大纲？直接粘贴，AI 将自动切分为结构化大纲',
         description: '已有完整描述？AI 将自动解析并直接生成图片，跳过大纲步骤',
         ppt_renovation: '上传已有的 PDF/PPTX 文件，AI 将解析内容并重新生成翻新后的PPT',
@@ -118,23 +133,23 @@ const homeI18n = {
       theme: { label: 'Theme', light: 'Light', dark: 'Dark', system: 'System' }
     },
     home: {
-      title: 'Banana Slides',
-      subtitle: 'Vibe your slides like vibe coding',
-      tagline: 'AI-native PPT generator powered by nano banana pro',
+      title: 'PPT Edit',
+      subtitle: 'A teaching deck generator for primary and secondary science education',
+      tagline: 'Create structured, consistent, editable PPTs through guided multi-turn dialogue',
       features: {
-        oneClick: 'One-click PPT generation',
-        naturalEdit: 'Natural language editing',
-        regionEdit: 'Region-specific editing',
-        export: 'Export to PPTX/PDF',
+        oneClick: 'Multi-turn generation',
+        naturalEdit: 'Editable PPTX',
+        regionEdit: 'Science lesson structure',
+        export: 'Consistent style export',
       },
       tabs: {
-        idea: 'From Idea',
+        idea: 'Guided multi-turn PPT generation',
         outline: 'From Outline',
         description: 'From Description',
         ppt_renovation: 'PPT Renovation',
       },
       tabDescriptions: {
-        idea: 'Enter your idea, AI will generate a complete PPT for you',
+        idea: 'Clarify learning goals, experiments, and slide structure through guided dialogue',
         outline: 'Have an outline? Paste it directly, AI will split it into a structured outline',
         description: 'Have detailed descriptions? AI will parse and generate images directly, skipping the outline step',
         ppt_renovation: 'Upload an existing PDF/PPTX file, AI will parse its content and regenerate the renovated PPT',
@@ -204,11 +219,11 @@ export const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState<CreationType>('idea');
   const [multiTemplateMode, setMultiTemplateMode] = useState(false);
   const [freeContent, setFreeContent] = useState('');
-  const [reportMode, setReportMode] = useState(false);
   const [reportFields, setReportFields] = useState({ ...emptyReport });
   const [reportPrompt, setReportPrompt] = useState('');
   const [reportEdited, setReportEdited] = useState(false);
-  const structured = activeTab === 'idea' && reportMode;
+  // 旧版“日常汇报”表单随一句话入口移除，保留状态字段以兼容其他创作模式的数据结构。
+  const structured = false;
   const content = structured ? reportPrompt : freeContent;
   const setContent = (value: React.SetStateAction<string>) => {
     if (structured) { setReportPrompt(value); setReportEdited(true); }
@@ -303,6 +318,10 @@ export const Home: React.FC = () => {
     setIsMaterialModalOpen(true);
   };
 
+  const handleStartMultiTurnPpt = () => {
+    navigate('/edit-ppt');
+  };
+
   const textareaRef = useRef<MarkdownTextareaRef>(null);
   const [isMaterialSelectorOpen, setIsMaterialSelectorOpen] = useState(false);
 
@@ -380,18 +399,18 @@ export const Home: React.FC = () => {
     // 检查文件大小（前端预检查）
     const maxSize = 200 * 1024 * 1024; // 200MB
     if (file.size > maxSize) {
-      show({ 
-        message: t('home.messages.fileTooLarge', { size: (file.size / 1024 / 1024).toFixed(1) }), 
-        type: 'error' 
+      show({
+        message: t('home.messages.fileTooLarge', { size: (file.size / 1024 / 1024).toFixed(1) }),
+        type: 'error'
       });
       return;
     }
 
     // 检查是否是PPT文件，提示建议使用PDF
     const fileExt = file.name.split('.').pop()?.toLowerCase();
-    if (fileExt === 'ppt' || fileExt === 'pptx') 
+    if (fileExt === 'ppt' || fileExt === 'pptx')
       show({ message: t('home.messages.pptTip'), type: 'info' });
-    
+
     setIsUploadingFile(true);
     try {
       // 在 Home 页面，始终上传为全局文件
@@ -400,7 +419,7 @@ export const Home: React.FC = () => {
         const uploadedFile = response.data.file;
         setReferenceFiles(prev => [...prev, uploadedFile]);
         show({ message: t('home.messages.fileUploadSuccess'), type: 'success' });
-        
+
         // 如果文件状态为 pending，自动触发解析
         if (uploadedFile.parse_status === 'pending') {
           try {
@@ -408,12 +427,12 @@ export const Home: React.FC = () => {
             // 使用解析接口返回的文件对象更新状态
             if (parseResponse?.data?.file) {
               const parsedFile = parseResponse.data.file;
-              setReferenceFiles(prev => 
+              setReferenceFiles(prev =>
                 prev.map(f => f.id === uploadedFile.id ? parsedFile : f)
               );
             } else {
               // 如果没有返回文件对象，手动更新状态为 parsing（异步线程会稍后更新）
-              setReferenceFiles(prev => 
+              setReferenceFiles(prev =>
                 prev.map(f => f.id === uploadedFile.id ? { ...f, parse_status: 'parsing' as const } : f)
               );
             }
@@ -427,7 +446,7 @@ export const Home: React.FC = () => {
       }
     } catch (error: any) {
       console.error('文件上传失败:', error);
-      
+
       // 特殊处理413错误
       if (error?.response?.status === 413) {
         show({
@@ -486,7 +505,7 @@ export const Home: React.FC = () => {
 
   // 文件状态变化回调
   const handleFileStatusChange = (updatedFile: ReferenceFile) => {
-    setReferenceFiles(prev => 
+    setReferenceFiles(prev =>
       prev.map(f => f.id === updatedFile.id ? updatedFile : f)
     );
   };
@@ -562,11 +581,34 @@ export const Home: React.FC = () => {
   };
 
   const handleTemplateSelect = async (templateFile: File | null, templateId?: string) => {
+    // 教学情境页会在独立的 main.html 中运行，React 状态卸载后仍需保留模板选择。
+    // 直接上传的图片保存为 Data URL；模板库/预设模板保存 ID，回到首页时再解析成 File。
+    try {
+      if (!templateFile && !templateId) {
+        sessionStorage.removeItem('edit-ppt-template-selection');
+      } else {
+        const selected: {
+          templateId?: string;
+          fileName?: string;
+          fileType?: string;
+          dataUrl?: string;
+        } = { templateId };
+        if (templateFile) {
+          selected.fileName = templateFile.name;
+          selected.fileType = templateFile.type;
+          selected.dataUrl = await fileToDataUrl(templateFile);
+        }
+        sessionStorage.setItem('edit-ppt-template-selection', JSON.stringify(selected));
+      }
+    } catch (error) {
+      console.warn('保存模板选择失败:', error);
+    }
+
     // 总是设置文件（如果提供）
     if (templateFile) {
       setSelectedTemplate(templateFile);
     }
-    
+
     // 处理模板 ID
     if (templateId) {
       // 判断是用户模板还是预设模板
@@ -590,6 +632,103 @@ export const Home: React.FC = () => {
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 教学情境页通过 sessionStorage + action 参数把已采集的课堂需求交给
+  // PPT Edit。进入首页后立即创建正式项目，并进入原生 PPT 生成流程。
+  const teachingLaunchRef = useRef(false);
+  useEffect(() => {
+    if (teachingLaunchRef.current || searchParams.get('action') !== 'teaching-context') return;
+
+    const raw = sessionStorage.getItem('edit-ppt-context');
+    if (!raw) return;
+
+    teachingLaunchRef.current = true;
+    let payload: {
+      context?: Record<string, unknown> | string;
+      notes?: Record<string, unknown> | string;
+      promptProfile?: unknown;
+      templateDataUrl?: string;
+      templateFileName?: string;
+      templateType?: string;
+    } = {};
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      show({ message: '教学情境数据无法读取，请重新采集后再试。', type: 'error' });
+      return;
+    }
+
+    const context = payload.context || {};
+    const notes = payload.notes || {};
+    // 教学情境页面既可能返回参数对象，也可能返回一段已经整理好的文本。
+    // 对字符串调用 Object.entries 会按字符拆分，导致页面出现「0：请、1：根」这类错误。
+    const contextLines = typeof context === 'string'
+      ? [context.trim()].filter(Boolean)
+      : Object.entries(context)
+        .filter(([, value]) => value !== undefined && value !== null && String(value).trim())
+        .map(([key, value]) => `- ${key}：${String(value)}`);
+    const noteLines = typeof notes === 'string'
+      ? [notes.trim()].filter(Boolean)
+      : Object.entries(notes)
+        .filter(([, value]) => value !== undefined && value !== null && String(value).trim())
+        .map(([key, value]) => `- ${key}：${String(value)}`);
+    const prompt = [
+      '请根据以下已确认的教学情境，直接生成一套面向中小学科学课堂的教学 PPT。',
+      '要求结构严谨、上下关联，围绕教学目标、探究问题、实验步骤、数据证据和结论组织页面。',
+      '教学情境参数：',
+      contextLines.join('\n'),
+      noteLines.length ? `补充要求：\n${noteLines.join('\n')}` : '',
+    ].filter(Boolean).join('\n');
+    const style = typeof context === 'object' && typeof context['课件设计'] === 'string'
+      ? context['课件设计']
+      : undefined;
+
+    void (async () => {
+      try {
+        let launchTemplateFile: File | undefined;
+        const storedSelection = sessionStorage.getItem('edit-ppt-template-selection');
+        let selection: {
+          templateId?: string;
+          fileName?: string;
+          fileType?: string;
+          dataUrl?: string;
+        } = {};
+        try {
+          selection = storedSelection ? JSON.parse(storedSelection) : {};
+        } catch {
+          selection = {};
+        }
+
+        const templateDataUrl = payload.templateDataUrl || selection.dataUrl;
+        if (templateDataUrl) {
+          launchTemplateFile = await dataUrlToFile(
+            templateDataUrl,
+            payload.templateFileName || selection.fileName || 'teaching-template.jpg',
+            payload.templateType || selection.fileType,
+          );
+        } else {
+          const templateId = selection.templateId;
+          if (templateId) {
+            const templateFile = await getTemplateFile(templateId, userTemplates);
+            if (templateFile) launchTemplateFile = templateFile;
+          }
+        }
+
+        await initializeProject('idea', prompt, launchTemplateFile, style, undefined, '16:9');
+        const projectId = localStorage.getItem('currentProjectId');
+        if (!projectId) throw new Error('项目创建成功但未返回项目 ID');
+        sessionStorage.removeItem('edit-ppt-context');
+        sessionStorage.removeItem('edit-ppt-template-selection');
+        const nextSearchParams = new URLSearchParams(searchParams);
+        nextSearchParams.delete('action');
+        setSearchParams(nextSearchParams, { replace: true });
+        navigate(`/project/${projectId}/outline`);
+      } catch (error: any) {
+        teachingLaunchRef.current = false;
+        show({ message: error?.message || '创建 PPT 项目失败，请重试。', type: 'error' });
+      }
+    })();
+  }, [initializeProject, navigate, searchParams, setSearchParams, show, userTemplates]);
 
   const handleSubmit = async () => {
     if (structured && !reportFields.topic.trim()) {
@@ -663,7 +802,7 @@ export const Home: React.FC = () => {
           }
         }
       }
-      
+
       // 传递风格描述（只要有内容就传递，不管开关状态）
       const styleDesc = templateStyle.trim() ? templateStyle.trim() : undefined;
 
@@ -673,7 +812,7 @@ export const Home: React.FC = () => {
         .map(f => f.id);
 
       await initializeProject(activeTab as 'idea' | 'outline' | 'description', content, templateFile || undefined, styleDesc, refFileIds.length > 0 ? refFileIds : undefined, aspectRatio);
-      
+
       // 根据类型跳转到不同页面
       const projectId = localStorage.getItem('currentProjectId');
       if (!projectId) {
@@ -708,7 +847,7 @@ export const Home: React.FC = () => {
           }
         }
       }
-      
+
       // 关联图片素材到项目（解析content中的markdown图片链接）
       const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
       const materialUrls: string[] = [];
@@ -716,7 +855,7 @@ export const Home: React.FC = () => {
       while ((match = imageRegex.exec(content)) !== null) {
         materialUrls.push(match[2]); // match[2] 是 URL
       }
-      
+
       if (materialUrls.length > 0) {
         devLog(`Associating ${materialUrls.length} materials to project ${projectId}:`, materialUrls);
         try {
@@ -729,7 +868,7 @@ export const Home: React.FC = () => {
       } else {
         devLog('No materials to associate');
       }
-      
+
       navigate(`/project/${projectId}/outline`);
     } catch (error: any) {
       console.error('创建项目失败:', error);
@@ -773,12 +912,12 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50/30 to-pink-50/50 dark:from-background-primary dark:via-background-primary dark:to-background-primary relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#eef3f7] via-white to-[#e8f1f6] dark:from-background-primary dark:via-background-primary dark:to-background-primary relative overflow-hidden">
       {/* 背景装饰元素 - 仅在亮色模式显示 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none dark:hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-banana-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-orange-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-yellow-400/5 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#75a18f]/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-[#3479aa]/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-[#9fc2da]/20 rounded-full blur-3xl"></div>
       </div>
 
       {/* 导航栏 — web only */}
@@ -790,12 +929,12 @@ export const Home: React.FC = () => {
             <div className="flex items-center">
               <img
                 src={logoUrl}
-                alt="蕉幻 Banana Slides Logo"
+                alt="PPT Edit Logo"
                 className="h-10 md:h-12 w-auto rounded-lg object-contain"
               />
             </div>
-            <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-banana-600 via-orange-500 to-pink-500 bg-clip-text text-transparent">
-              蕉幻
+            <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[#286c94] via-[#3479aa] to-[#75a18f] bg-clip-text text-transparent">
+              PPT Edit
             </span>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
@@ -943,11 +1082,11 @@ export const Home: React.FC = () => {
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
-            <span className="bg-gradient-to-r from-yellow-600 via-orange-500 to-pink-500 dark:from-banana-dark dark:via-banana dark:to-banana-light bg-clip-text text-transparent dark:italic" style={{
+            <span className="bg-gradient-to-r from-[#286c94] via-[#3479aa] to-[#75a18f] dark:from-banana-dark dark:via-banana dark:to-banana-light bg-clip-text text-transparent" style={{
               backgroundSize: '200% auto',
               animation: 'gradient 3s ease infinite',
             }}>
-              {i18n.language?.startsWith('zh') ? `${t('home.title')} · Banana Slides` : 'Banana Slides'}
+              {i18n.language?.startsWith('zh') ? 'PPT Edit · 可编辑PPT生成' : 'PPT Edit · Editable PPT generation'}
             </span>
           </h1>
 
@@ -979,7 +1118,7 @@ export const Home: React.FC = () => {
         <Card className="p-4 md:p-10 bg-white/90 dark:bg-background-secondary backdrop-blur-xl dark:backdrop-blur-none shadow-2xl dark:shadow-none border-0 dark:border dark:border-border-primary hover:shadow-3xl dark:hover:shadow-none transition-all duration-300 dark:rounded-2xl">
           {/* 选项卡 */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-6 md:mb-8">
-            {(Object.keys(tabConfig) as CreationType[]).map((type) => {
+            {(['idea'] as CreationType[]).map((type) => {
               const config = tabConfig[type];
               return (
                 <button
@@ -987,8 +1126,8 @@ export const Home: React.FC = () => {
                   onClick={() => setActiveTab(type)}
                   className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-lg dark:rounded-xl font-medium transition-all text-sm md:text-base touch-manipulation ${
                     activeTab === type
-                      ? 'bg-gradient-to-r from-banana-500 to-banana-600 dark:from-banana dark:to-banana text-black shadow-yellow dark:shadow-lg dark:shadow-banana/20'
-                      : 'bg-white dark:bg-background-elevated border border-gray-200 dark:border-border-primary text-gray-700 dark:text-foreground-secondary hover:bg-banana-50 dark:hover:bg-background-hover active:bg-banana-100'
+                      ? 'bg-gradient-to-r from-[#3479aa] to-[#286c94] dark:from-[#3479aa] dark:to-[#286c94] text-white shadow-[0_6px_16px_rgba(52,121,170,0.22)]'
+                      : 'bg-white dark:bg-background-elevated border border-gray-200 dark:border-border-primary text-gray-700 dark:text-foreground-secondary hover:bg-[#edf5fb] dark:hover:bg-background-hover active:bg-[#dcecf5]'
                   }`}
                 >
                   <span className="scale-90 md:scale-100">{config.icon}</span>
@@ -1113,85 +1252,103 @@ export const Home: React.FC = () => {
               </div>
             ) : (
             <>
-            {activeTab === 'idea' && <div className="flex gap-2 mb-4">
-              {[false, true].map(report => <button type="button" key={String(report)} aria-pressed={reportMode === report}
-                disabled={isSubmitting || isGlobalLoading} onClick={() => setReportMode(report)}
-                className={`px-3 py-2 rounded-lg text-sm ${reportMode === report ? 'bg-banana-100 text-gray-900' : 'text-gray-500'}`}>
-                {report ? (i18n.language?.startsWith('zh') ? '日常汇报' : 'Report builder') : (i18n.language?.startsWith('zh') ? '自由输入' : 'Free input')}
-              </button>)}
-            </div>}
-            {structured && <ReportForm fields={reportFields} zh={!!i18n.language?.startsWith('zh')} disabled={isSubmitting || isGlobalLoading}
-              onChange={fields => { setReportFields(fields); if (!reportEdited) setReportPrompt(buildReportPrompt(fields, !!i18n.language?.startsWith('zh'))); }}
-              onRebuild={() => { setReportEdited(false); setReportPrompt(buildReportPrompt(reportFields, !!i18n.language?.startsWith('zh'))); }} />}
-            <MarkdownTextarea
-              ref={textareaRef}
-              placeholder={tabConfig[activeTab].placeholder}
-              value={content}
-              onChange={setContent}
-              onPaste={handlePaste}
-              onFiles={handleImageFiles}
-              onDocumentFiles={handleDocumentFiles}
-              onSelectFromLibrary={() => setIsMaterialSelectorOpen(true)}
-              rows={activeTab === 'idea' ? 4 : 8}
-              className="text-sm md:text-base border-2 border-gray-200 dark:border-border-primary dark:bg-background-tertiary dark:text-white focus-within:border-banana-400 dark:focus-within:border-banana transition-colors duration-200"
-              toolbarLeft={
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handlePaperclipClick}
-                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-foreground-tertiary dark:hover:text-foreground-secondary dark:hover:bg-background-hover rounded transition-colors active:scale-95 touch-manipulation"
-                    title={t('home.actions.selectFile')}
-                  >
-                    <Paperclip size={18} />
-                  </button>
-                  {/* 画面比例选择 */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsAspectRatioOpen(!isAspectRatioOpen)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-foreground-tertiary dark:hover:text-foreground-secondary dark:hover:bg-background-hover rounded transition-colors"
-                      title={i18n.language?.startsWith('zh') ? '画面比例' : 'Aspect Ratio'}
-                    >
-                      <span>{aspectRatio}</span>
-                      <ChevronDown size={12} className={`transition-transform ${isAspectRatioOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isAspectRatioOpen && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setIsAspectRatioOpen(false)} />
-                        <div className="absolute left-0 bottom-full mb-1 z-50 bg-white dark:bg-background-elevated border border-gray-200 dark:border-border-primary rounded-lg shadow-lg dark:shadow-none py-1 min-w-[80px]">
-                          {ASPECT_RATIO_OPTIONS.map((opt) => (
-                            <button
-                              key={opt.value}
-                              onClick={() => { setAspectRatio(opt.value); setIsAspectRatioOpen(false); }}
-                              className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-background-hover transition-colors ${aspectRatio === opt.value ? 'text-banana font-semibold' : 'text-gray-700 dark:text-foreground-secondary'}`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
+            {activeTab === 'idea' ? (
+              <div className="rounded-2xl border border-[#cbdde8] bg-gradient-to-br from-white via-[#f7fbfd] to-[#edf5f9] p-6 md:p-10 text-center shadow-sm">
+                <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#e6f1f7] text-[#3479aa]">
+                  <MessageSquare size={28} />
                 </div>
-              }
-              toolbarRight={
+                <h3 className="text-xl md:text-2xl font-semibold text-[#365b76]">
+                  {i18n.language?.startsWith('zh') ? '开始多轮对话，生成科学教育 PPT' : 'Start a guided conversation to create a science deck'}
+                </h3>
+                <p className="mx-auto mt-3 max-w-xl text-sm md:text-base leading-7 text-[#6d8799]">
+                  {i18n.language?.startsWith('zh')
+                    ? '系统会逐步引导你明确学段、学习目标、实验探究和页面结构，最后生成可编辑 PPT。'
+                    : 'Clarify grade level, learning goals, experiments, and slide structure step by step, then generate an editable PPT.'}
+                </p>
                 <Button
-                  size="sm"
-                  onClick={handleSubmit}
-                  loading={isSubmitting || isGlobalLoading}
-                  disabled={
-                    !content.trim() || (structured && !reportFields.topic.trim()) ||
-                    isUploadingImage ||
-                    referenceFiles.some(f => f.parse_status === 'pending' || f.parse_status === 'parsing')
-                  }
-                  className="shadow-sm dark:shadow-background-primary/30 text-xs md:text-sm px-3 md:px-4"
+                  size="lg"
+                  icon={<MessageSquare size={18} />}
+                  onClick={handleStartMultiTurnPpt}
+                  className="mt-6 bg-[#3479aa] text-white shadow-lg shadow-[#3479aa]/20 hover:bg-[#286c94]"
                 >
-                  {referenceFiles.some(f => f.parse_status === 'pending' || f.parse_status === 'parsing')
-                    ? t('home.actions.parsing')
-                    : t('common.next')}
+                  {i18n.language?.startsWith('zh') ? '开始多轮对话生成 PPT' : 'Start multi-turn PPT generation'}
                 </Button>
-              }
-            />
+              </div>
+            ) : (
+              <>
+                {structured && <ReportForm fields={reportFields} zh={!!i18n.language?.startsWith('zh')} disabled={isSubmitting || isGlobalLoading}
+                  onChange={fields => { setReportFields(fields); if (!reportEdited) setReportPrompt(buildReportPrompt(fields, !!i18n.language?.startsWith('zh'))); }}
+                  onRebuild={() => { setReportEdited(false); setReportPrompt(buildReportPrompt(reportFields, !!i18n.language?.startsWith('zh'))); }} />}
+                <MarkdownTextarea
+                  ref={textareaRef}
+                  placeholder={tabConfig[activeTab].placeholder}
+                  value={content}
+                  onChange={setContent}
+                  onPaste={handlePaste}
+                  onFiles={handleImageFiles}
+                  onDocumentFiles={handleDocumentFiles}
+                  onSelectFromLibrary={() => setIsMaterialSelectorOpen(true)}
+                  rows={8}
+                  className="text-sm md:text-base border-2 border-gray-200 dark:border-border-primary dark:bg-background-tertiary dark:text-white focus-within:border-banana-400 dark:focus-within:border-banana transition-colors duration-200"
+                  toolbarLeft={
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={handlePaperclipClick}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-foreground-tertiary dark:hover:text-foreground-secondary dark:hover:bg-background-hover rounded transition-colors active:scale-95 touch-manipulation"
+                        title={t('home.actions.selectFile')}
+                      >
+                        <Paperclip size={18} />
+                      </button>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setIsAspectRatioOpen(!isAspectRatioOpen)}
+                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-foreground-tertiary dark:hover:text-foreground-secondary dark:hover:bg-background-hover rounded transition-colors"
+                          title={i18n.language?.startsWith('zh') ? '画面比例' : 'Aspect Ratio'}
+                        >
+                          <span>{aspectRatio}</span>
+                          <ChevronDown size={12} className={`transition-transform ${isAspectRatioOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isAspectRatioOpen && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setIsAspectRatioOpen(false)} />
+                            <div className="absolute left-0 bottom-full mb-1 z-50 bg-white dark:bg-background-elevated border border-gray-200 dark:border-border-primary rounded-lg shadow-lg dark:shadow-none py-1 min-w-[80px]">
+                              {ASPECT_RATIO_OPTIONS.map((opt) => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => { setAspectRatio(opt.value); setIsAspectRatioOpen(false); }}
+                                  className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-background-hover transition-colors ${aspectRatio === opt.value ? 'text-banana font-semibold' : 'text-gray-700 dark:text-foreground-secondary'}`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  }
+                  toolbarRight={
+                    <Button
+                      size="sm"
+                      onClick={handleSubmit}
+                      loading={isSubmitting || isGlobalLoading}
+                      disabled={
+                        !content.trim() || (structured && !reportFields.topic.trim()) ||
+                        isUploadingImage ||
+                        referenceFiles.some(f => f.parse_status === 'pending' || f.parse_status === 'parsing')
+                      }
+                      className="shadow-sm dark:shadow-background-primary/30 text-xs md:text-sm px-3 md:px-4"
+                    >
+                      {referenceFiles.some(f => f.parse_status === 'pending' || f.parse_status === 'parsing')
+                        ? t('home.actions.parsing')
+                        : t('common.next')}
+                    </Button>
+                  }
+                />
+              </>
+            )}
             </>
             )}
           </div>
@@ -1265,7 +1422,7 @@ export const Home: React.FC = () => {
                 </div>
               </label>
             </div>
-            
+
             {/* 每页独立模板开关 */}
             <label className="flex items-center gap-2 cursor-pointer group mb-3" title={t('home.template.multiModeHint')}>
               <input
@@ -1330,7 +1487,7 @@ export const Home: React.FC = () => {
         multiple={true}
         initialSelectedIds={selectedFileIds}
       />
-      
+
       <FilePreviewModal fileId={previewFileId} onClose={() => setPreviewFileId(null)} />
       {/* 帮助模态框 */}
       <HelpModal

@@ -14,8 +14,9 @@ const templateI18n = {
       selectFromMaterials: "从素材库选择", selectAsTemplate: "从素材库选择作为模板",
       cannotDeleteInUse: "当前使用中的模板不能删除，请先取消选择或切换",
       presets: {
-        retroScroll: "复古卷轴", vectorIllustration: "矢量插画", glassEffect: "拟物玻璃",
-        techBlue: "科技蓝", simpleBusiness: "简约商务", academicReport: "学术报告"
+        elementaryScience: "小学科学探究", physicsExperiment: "物理实验",
+        chemistryLab: "化学实验", biologyEcology: "生物与生态",
+        earthEnvironment: "地理与环境", engineeringPractice: "工程与技术"
       },
       messages: { uploadSuccess: "模板上传成功", uploadFailed: "模板上传失败", deleteSuccess: "模板已删除", deleteFailed: "删除模板失败" }
     },
@@ -29,8 +30,9 @@ const templateI18n = {
       selectFromMaterials: "Select from Materials", selectAsTemplate: "Select from materials as template",
       cannotDeleteInUse: "Cannot delete template in use, please deselect or switch first",
       presets: {
-        retroScroll: "Retro Scroll", vectorIllustration: "Vector Illustration", glassEffect: "Glass Effect",
-        techBlue: "Tech Blue", simpleBusiness: "Simple Business", academicReport: "Academic Report"
+        elementaryScience: "Elementary Science", physicsExperiment: "Physics Experiments",
+        chemistryLab: "Chemistry Lab", biologyEcology: "Biology & Ecology",
+        earthEnvironment: "Earth & Environment", engineeringPractice: "Engineering Practice"
       },
       messages: { uploadSuccess: "Template uploaded successfully", uploadFailed: "Failed to upload template", deleteSuccess: "Template deleted", deleteFailed: "Failed to delete template" }
     },
@@ -71,9 +73,12 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const { show, ToastContainer } = useToast();
 
   const presetTemplates = [
-    { id: '1', nameKey: 'template.presets.retroScroll', preview: publicAssetPath('/templates/template_y.png'), thumb: publicAssetPath('/templates/template_y-thumb.webp') },
-    { id: '2', nameKey: 'template.presets.vectorIllustration', preview: publicAssetPath('/templates/template_vector_illustration.png'), thumb: publicAssetPath('/templates/template_vector_illustration-thumb.webp') },
-    { id: '3', nameKey: 'template.presets.glassEffect', preview: publicAssetPath('/templates/template_glass.png'), thumb: publicAssetPath('/templates/template_glass-thumb.webp') },
+    { id: '1', nameKey: 'template.presets.elementaryScience', preview: publicAssetPath('/templates/science-elementary.png'), thumb: publicAssetPath('/templates/science-elementary-thumb.webp') },
+    { id: '2', nameKey: 'template.presets.physicsExperiment', preview: publicAssetPath('/templates/science-physics.png'), thumb: publicAssetPath('/templates/science-physics-thumb.webp') },
+    { id: '3', nameKey: 'template.presets.chemistryLab', preview: publicAssetPath('/templates/science-chemistry.png'), thumb: publicAssetPath('/templates/science-chemistry-thumb.webp') },
+    { id: '4', nameKey: 'template.presets.biologyEcology', preview: publicAssetPath('/templates/science-biology.png'), thumb: publicAssetPath('/templates/science-biology-thumb.webp') },
+    { id: '5', nameKey: 'template.presets.earthEnvironment', preview: publicAssetPath('/templates/science-earth.png'), thumb: publicAssetPath('/templates/science-earth-thumb.webp') },
+    { id: '6', nameKey: 'template.presets.engineeringPractice', preview: publicAssetPath('/templates/science-engineering.png'), thumb: publicAssetPath('/templates/science-engineering-thumb.webp') },
   ];
 
   useEffect(() => {
@@ -227,7 +232,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
         <div>
           <h4 className="text-sm font-medium text-gray-700 dark:text-foreground-secondary mb-2">{t('template.presetTemplates')}</h4>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
             {presetTemplates.map((template) => (
               <div
                 key={template.id}
@@ -340,9 +345,12 @@ export const getTemplateFile = async (
   };
 
   const presetTemplates = [
-    { id: '1', preview: publicAssetPath('/templates/template_y.png') },
-    { id: '2', preview: publicAssetPath('/templates/template_vector_illustration.png') },
-    { id: '3', preview: publicAssetPath('/templates/template_glass.png') },
+    { id: '1', preview: publicAssetPath('/templates/science-elementary.png') },
+    { id: '2', preview: publicAssetPath('/templates/science-physics.png') },
+    { id: '3', preview: publicAssetPath('/templates/science-chemistry.png') },
+    { id: '4', preview: publicAssetPath('/templates/science-biology.png') },
+    { id: '5', preview: publicAssetPath('/templates/science-earth.png') },
+    { id: '6', preview: publicAssetPath('/templates/science-engineering.png') },
   ];
 
   const presetTemplate = presetTemplates.find(t => t.id === templateId);

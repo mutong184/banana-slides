@@ -26,9 +26,10 @@ export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-      return stored || 'system';
+      // PPT Edit 默认采用 main.html 的浅色教学工作区风格，避免首次打开出现黑色背景。
+      return stored || 'light';
     }
-    return 'system';
+    return 'light';
   });
 
   const setTheme = useCallback((newTheme: Theme) => {

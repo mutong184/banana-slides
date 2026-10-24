@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Sparkles, FileText, Palette, MessageSquare, Download, ChevronLeft, ChevronRight, ExternalLink, Settings, Check, Video, Lightbulb } from 'lucide-react';
+import { Sparkles, FileText, Palette, MessageSquare, Download, ChevronLeft, ChevronRight, ExternalLink, Settings, Check, Lightbulb } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { useT } from '@/hooks/useT';
 import { useTranslation } from 'react-i18next';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/edit-banana.jpg';
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -13,15 +13,15 @@ import logoUrl from '@/assets/logo.png';
 const i18nDict = {
   zh: {
     guide: {
-      brand: '蕉幻 · Banana Slides',
+      brand: 'PPT Edit · 可编辑 PPT 生成',
       setup: '快速开始',
       setupSub: '完成基础配置，开启 AI 创作之旅',
       features: '功能介绍',
       featuresSub: '探索如何使用 AI 快速创建精美 PPT',
       gallery: '结果案例',
-      gallerySub: '以下是使用蕉幻生成的 PPT 案例展示',
+      gallerySub: '以下是使用PPT Edit生成的 PPT 案例展示',
       galleryMore: '查看更多使用案例',
-      hi: '欢迎使用蕉幻！',
+      hi: '欢迎使用PPT Edit！',
       hiSub: '在开始前，让我们先完成基础配置',
       s1: '配置 API Key',
       s1d: '前往设置页面，配置项目需要使用的API服务，包括：',
@@ -35,7 +35,7 @@ const i18nDict = {
       issueLink: '前往Github issue',
       settingsBtn: '前往设置页面',
       featuresOverview: '功能总览',
-      featuresOverviewDesc: '了解 Banana Slides 的完整工作流程、创作路径、素材支持和导出能力。',
+      featuresOverviewDesc: '了解 PPT Edit 的完整工作流程、创作路径、素材支持和导出能力。',
       feishuTutorial: '设置页图文教程',
       feishuTutorialDesc: '按步骤完成设置页面配置。',
       faq: '常见问题',
@@ -56,15 +56,15 @@ const i18nDict = {
   },
   en: {
     guide: {
-      brand: 'Banana Slides',
+      brand: 'PPT Edit',
       setup: 'Quick Start',
       setupSub: 'Complete basic configuration and start your AI creation journey',
       features: 'Features',
       featuresSub: 'Explore how to use AI to quickly create beautiful PPT',
       gallery: 'Showcases',
-      gallerySub: 'Here are PPT examples generated with Banana Slides',
+      gallerySub: 'Here are PPT examples generated with PPT Edit',
       galleryMore: 'View more examples',
-      hi: 'Welcome to Banana Slides!',
+      hi: 'Welcome to PPT Edit!',
       hiSub: "Let's complete the basic configuration before you start",
       s1: 'Configure API Key',
       s1d: 'Go to settings page to configure the API services needed for the project, including:',
@@ -78,7 +78,7 @@ const i18nDict = {
       issueLink: 'Go to GitHub Issues',
       settingsBtn: 'Go to Settings',
       featuresOverview: 'Features Overview',
-      featuresOverviewDesc: 'Learn the full workflow, creation paths, material support, and export options in Banana Slides.',
+      featuresOverviewDesc: 'Learn the full workflow, creation paths, material support, and export options in PPT Edit.',
       feishuTutorial: 'Settings Guide',
       feishuTutorialDesc: 'Follow the step-by-step guide to configure Settings.',
       faq: 'FAQ',
@@ -114,7 +114,6 @@ const FEATURES: { key: string; icon: React.ReactNode }[] = [
   { key: 'parse', icon: <FileText className="text-blue-500" size={24} /> },
   { key: 'vibe', icon: <MessageSquare className="text-green-500" size={24} /> },
   { key: 'export', icon: <Download className="text-purple-500" size={24} /> },
-  { key: 'video', icon: <Video className="text-red-500" size={24} /> },
 ];
 
 const CONFIG_LINKS = [
@@ -197,7 +196,7 @@ const renderSetupPage: PageRenderer = ({ t, lang, navigate, onClose }) => {
     <div className="space-y-6">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center mr-4">
-          <img src={logoUrl} alt="Banana Slides Logo" className="h-16 w-16 object-contain" />
+          <img src={logoUrl} alt="PPT Edit Logo" className="h-16 w-16 object-contain" />
         </div>
         <h3 className="text-2xl font-bold text-gray-800 dark:text-foreground-primary">{t('guide.hi')}</h3>
         <p className="text-sm text-gray-600 dark:text-foreground-tertiary">{t('guide.hiSub')}</p>

@@ -68,11 +68,16 @@ COPY backend/ ./backend/
 # 复制测试资源
 COPY assets/ ./assets/
 
+# The web frontend serves this page in normal operation; copy it here too so
+# the backend's direct /edit-ppt/* routes work in split-container deployments.
+COPY frontend/public/edit-ppt/ ./edit-ppt/
+
 # 创建必要的目录
 RUN mkdir -p /app/backend/instance /app/uploads
 
 ENV PYTHONPATH=/app
 ENV FLASK_APP=backend/app.py
+ENV EDIT_PPT_ROOT=/app/edit-ppt
 # 容器内固定监听 5000；宿主机端口由 docker-compose 的 BACKEND_PORT 控制
 ENV IN_DOCKER=1
 ENV APP_VERSION_TAG=${APP_VERSION_TAG}

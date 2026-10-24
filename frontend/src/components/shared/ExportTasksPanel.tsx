@@ -550,9 +550,10 @@ export const ExportTasksPanel: React.FC<ExportTasksPanelProps> = ({ projectId, p
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const { confirm, ConfirmDialog } = useConfirm();
 
-  const filteredTasks = projectId
+  // 讲解视频导出已从产品流程移除；历史视频任务不再出现在导出面板中。
+  const filteredTasks = (projectId
     ? tasks.filter(task => task.projectId === projectId)
-    : tasks;
+    : tasks).filter(task => task.type !== 'video');
 
   const activeTasks = filteredTasks.filter(
     task => task.status === 'PENDING' || task.status === 'PROCESSING' || task.status === 'RUNNING'

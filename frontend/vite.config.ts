@@ -87,6 +87,20 @@ export default defineConfig(({ mode }) => {
           target: backendUrl,
           changeOrigin: true,
         },
+        // 教学情境页面静态文件：仅代理 iframe 需要的资源，保留
+        // /edit-ppt 由 React Router 处理，避免直接刷新时被后端 404 拦截。
+        '/edit-ppt/main.html': {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+        '/edit-ppt/ppt-generator.js': {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+        '/edit-ppt/edit-banana.jpg': {
+          target: backendUrl,
+          changeOrigin: true,
+        },
       },
     },
     // Vitest 测试配置

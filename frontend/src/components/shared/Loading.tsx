@@ -55,8 +55,8 @@ export const Loading: React.FC<LoadingProps> = ({
     <div className="flex flex-col items-center justify-center max-w-md w-full px-4">
       {/* 加载图标 */}
       <div className="relative w-12 h-12 mb-4">
-        <div className="absolute inset-0 border-4 border-banana-100 rounded-full" />
-        <div className="absolute inset-0 border-4 border-banana-500 rounded-full border-t-transparent animate-spin" />
+        <div className="absolute inset-0 border-4 border-[#dce7ef] rounded-full" />
+        <div className="absolute inset-0 border-4 border-[#3479aa] rounded-full border-t-transparent animate-spin" />
       </div>
       
       {/* 消息 */}
@@ -70,7 +70,7 @@ export const Loading: React.FC<LoadingProps> = ({
           </div>
           <div className="h-2 bg-gray-200 dark:bg-background-hover rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-banana-500 to-banana-600 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-[#3479aa] to-[#75a18f] transition-all duration-300"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -80,18 +80,18 @@ export const Loading: React.FC<LoadingProps> = ({
       {/* 滚动消息日志 */}
       {hasMessages && (
         <div className="w-full mt-4">
-          <div className="bg-banana-50 dark:bg-background-secondary border border-banana-200 dark:border-border-primary rounded-lg p-3 h-32 overflow-y-auto text-xs">
+          <div className="bg-[#f1f7fb] dark:bg-background-secondary border border-[#dce7ef] dark:border-border-primary rounded-lg p-3 h-32 overflow-y-auto text-xs">
             {progress.messages!.map((msg, index) => (
               <div
                 key={index}
                 className={cn(
                   "py-0.5",
                   index === progress.messages!.length - 1
-                    ? "text-banana-700 dark:text-banana-400 font-medium"
+                    ? "text-[#286c94] dark:text-[#9fc2da] font-medium"
                     : "text-gray-500 dark:text-foreground-tertiary"
                 )}
               >
-                <span className="text-banana-400 mr-2">›</span>
+                <span className="text-[#75a18f] mr-2">›</span>
                 {msg}
               </div>
             ))}

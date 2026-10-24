@@ -155,7 +155,7 @@ export const settingsI18n = {
           suitedFor: "适合：国内网络、个人使用、追求性价比",
           point1: "国内直连，无需特殊网络环境",
           point2: "效果接近海外主流，价格更低",
-          point3: "订阅后可日常使用，不局限于 Banana Slides",
+          point3: "订阅后可日常使用，不局限于 PPT Edit",
           cta: "选择此方案",
           active: "当前方案",
           link: "查看优惠并订阅 →",
@@ -165,7 +165,7 @@ export const settingsI18n = {
       volcenginePromo: {
         providerHint: "国内直连",
         title: "为什么选择火山 Agent Plan？",
-        body: "相比海外主流官方 API，价格更低、性价比更高，生成效果接近；国内直连，无需特殊网络环境。订阅后还可用于日常使用和其他兼容工具，不局限于 Banana Slides。官方活动页目前还提供 Agent Plan / Coding Plan 限时折扣、豆包模型资源包和免费 Tokens。",
+        body: "相比海外主流官方 API，价格更低、性价比更高，生成效果接近；国内直连，无需特殊网络环境。订阅后还可用于日常使用和其他兼容工具，不局限于 PPT Edit。官方活动页目前还提供 Agent Plan / Coding Plan 限时折扣、豆包模型资源包和免费 Tokens。",
         cta: "查看优惠并订阅",
         copy: "复制链接",
         guideLink: "火山 AgentPlans",
@@ -182,7 +182,7 @@ export const settingsI18n = {
       doubaoVolcenginePromo: {
         providerHint: "国内直连",
         title: "为什么选择豆包 / 火山方舟？",
-        body: "国内直连，无需特殊网络环境；API Key 可用于 Banana Slides、日常开发和其他兼容工具。官方活动还提供豆包图像创作模型 5.0、模型资源包、Agent Plan / Coding Plan 限时折扣和免费 Tokens。",
+        body: "国内直连，无需特殊网络环境；API Key 可用于 PPT Edit、日常开发和其他兼容工具。官方活动还提供豆包图像创作模型 5.0、模型资源包、Agent Plan / Coding Plan 限时折扣和免费 Tokens。",
         cta: "查看官方活动",
         copy: "复制链接",
         guideLink: "火山引擎官方活动页",
@@ -385,7 +385,7 @@ export const settingsI18n = {
           suitedFor: "Best for: domestic networks, personal use, or budget-conscious users",
           point1: "Direct domestic access, no special network setup",
           point2: "Comparable quality at a lower price than major overseas APIs",
-          point3: "Subscription also works for daily use, not only Banana Slides",
+          point3: "Subscription also works for daily use, not only PPT Edit",
           cta: "Choose this plan",
           active: "Current plan",
           link: "View plans and subscribe →",
@@ -395,7 +395,7 @@ export const settingsI18n = {
       volcenginePromo: {
         providerHint: "Direct access",
         title: "Why choose Volcengine Agent Plan?",
-        body: "It is more cost-effective than major overseas model APIs while offering comparable generation quality. The subscription can also be used for everyday work and other compatible tools—not only Banana Slides. The official campaign currently includes Agent Plan and Coding Plan discounts, Doubao model bundles, and free Tokens.",
+        body: "It is more cost-effective than major overseas model APIs while offering comparable generation quality. The subscription can also be used for everyday work and other compatible tools—not only PPT Edit. The official campaign currently includes Agent Plan and Coding Plan discounts, Doubao model bundles, and free Tokens.",
         cta: "View plans and subscribe",
         copy: "Copy link",
         guideLink: "Volcengine AgentPlans",
@@ -412,7 +412,7 @@ export const settingsI18n = {
       doubaoVolcenginePromo: {
         providerHint: "Direct access",
         title: "Why choose Doubao / ModelArk?",
-        body: "The API key works with Banana Slides, everyday development, and other compatible tools. The official campaign includes Doubao image creation model 5.0, model bundles, Agent Plan and Coding Plan discounts, and free Tokens. Enter a standard ModelArk API Key here, not a dedicated Agent/Coding Plan key.",
+        body: "The API key works with PPT Edit, everyday development, and other compatible tools. The official campaign includes Doubao image creation model 5.0, model bundles, Agent Plan and Coding Plan discounts, and free Tokens. Enter a standard ModelArk API Key here, not a dedicated Agent/Coding Plan key.",
         cta: "View official campaign",
         copy: "Copy link",
         guideLink: "official Volcengine campaign page",

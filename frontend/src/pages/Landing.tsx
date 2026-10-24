@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Sparkles, FileText, MessageSquare, Download, ChevronRight, Github, ChevronLeft } from 'lucide-react';
 import { Button, Footer } from '@/components/shared';
 import { useT } from '@/hooks/useT';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/edit-banana.jpg';
 
 // 组件内翻译
 const landingI18n = {
@@ -16,7 +16,7 @@ const landingI18n = {
         title_start: "让创意",
         title_highlight: "瞬间落地",
         title_end: "无需繁琐排版",
-        subtitle: "专注于您的内容与想法，剩下的交给 Banana Slides。从大纲到精美幻灯片，只需几分钟。",
+        subtitle: "面向中小学科学教育场景，通过多轮对话生成结构严谨、风格统一的可编辑 PPT。",
         cta_primary: "免费开始使用"
       }
     }
@@ -29,7 +29,7 @@ const landingI18n = {
         title_start: "Turn Ideas into",
         title_highlight: "Reality Instantly",
         title_end: "No Formatting Hassle",
-        subtitle: "Focus on your content and ideas, leave the rest to Banana Slides. From outline to beautiful slides in seconds.",
+        subtitle: "Create structured, consistent, editable science teaching decks through guided multi-turn dialogue.",
         cta_primary: "Get Started for Free"
       }
     }
@@ -85,25 +85,25 @@ export const Landing: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-background-primary relative overflow-hidden flex flex-col font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-[#eef3f7] via-white to-[#e8f1f6] relative overflow-hidden flex flex-col font-sans">
       {/* 动态背景 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-bl from-banana-100/40 to-transparent dark:from-banana-900/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 animate-float-slow"></div>
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-orange-100/40 to-transparent dark:from-orange-900/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 animate-float-delayed"></div>
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-bl from-[#9fc2da]/30 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 animate-float-slow"></div>
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-[#75a18f]/20 to-transparent rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 animate-float-delayed"></div>
       </div>
 
       {/* 导航栏 */}
       <nav className="relative z-50 w-full px-6 py-6 flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <img src={logoUrl} alt="Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-lg shadow-sm" />
-          <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-            Banana Slides
+          <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[#286c94] to-[#75a18f] bg-clip-text text-transparent">
+            PPT Edit
           </span>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={() => i18n.changeLanguage(i18n.language?.startsWith('zh') ? 'en' : 'zh')}
-            className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"
+            className="text-sm font-medium text-[#6d8799] hover:text-[#286c94] transition-colors px-3 py-1.5 rounded-full hover:bg-white/70"
           >
             {i18n.language?.startsWith('zh') ? 'EN' : '中'}
           </button>
@@ -129,9 +129,9 @@ export const Landing: React.FC = () => {
             {t('landing.hero.badge')}
           </div>
 
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-gray-900 dark:text-white leading-[1.1]">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-[#294f6c] leading-[1.1]">
             {t('landing.hero.title_start')}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-banana-500 via-orange-500 to-pink-500 px-2 relative inline-block">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#286c94] via-[#3479aa] to-[#75a18f] px-2 relative inline-block">
               {t('landing.hero.title_highlight')}
               <svg className="absolute w-full h-3 -bottom-1 left-0 text-banana-200 dark:text-banana-900/30 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="8" fill="none" />
@@ -141,7 +141,7 @@ export const Landing: React.FC = () => {
             {t('landing.hero.title_end')}
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed font-light">
+          <p className="text-lg md:text-xl text-[#6d8799] max-w-2xl mx-auto leading-relaxed font-light">
             {t('landing.hero.subtitle')}
           </p>
 

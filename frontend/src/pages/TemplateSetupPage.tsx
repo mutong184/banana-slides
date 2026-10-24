@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,7 +15,7 @@ import {
   PenLine,
   Wand2,
 } from 'lucide-react';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/edit-banana.jpg';
 import { useT } from '@/hooks/useT';
 import { cn } from '@/utils';
 import { getImageUrl } from '@/api/client';
@@ -29,7 +29,7 @@ import type { Task, TemplateAsset } from '@/types';
 
 const i18n = {
   zh: {
-    home: { title: '蕉幻' },
+    home: { title: 'PPT Edit' },
     ts: {
       title: '模板配置',
       back: '返回',
@@ -84,7 +84,7 @@ const i18n = {
     },
   },
   en: {
-    home: { title: 'Banana Slides' },
+    home: { title: 'PPT Edit' },
     ts: {
       title: 'Template Setup',
       back: 'Back',
@@ -156,8 +156,11 @@ const statusTextClass: Record<TemplateAsset['analysis_status'], string> = {
 
 export const TemplateSetupPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const t = useT(i18n);
   const { projectId } = useParams<{ projectId: string }>();
+  const routeState = (location.state as Record<string, unknown> | null) || {};
+  const previewState = { ...routeState, autoGenerateImages: routeState.autoGenerateImages === true };
   const { show, ToastContainer } = useToast();
   const { confirm, ConfirmDialog } = useConfirm();
 
@@ -233,7 +236,7 @@ export const TemplateSetupPage: React.FC = () => {
   // 路由守卫：统一模板模式直接跳预览（决策 6）
   useEffect(() => {
     if (currentProject && currentProject.id === projectId && currentProject.template_mode === 'single') {
-      navigate(`/project/${projectId}/preview`, { replace: true });
+      navigate(`/project/${projectId}/preview`, { replace: true, state: previewState });
     }
   }, [currentProject?.template_mode, currentProject?.id, projectId, navigate]);
 
@@ -371,13 +374,13 @@ export const TemplateSetupPage: React.FC = () => {
       unified_asset_id: assetId,
       unified_style_text: unifiedStyleText ?? null,
     });
-    navigate(`/project/${projectId}/preview`, { replace: true });
+    navigate(`/project/${projectId}/preview`, { replace: true, state: previewState });
   };
 
   const handleSwitchUpload = async (file: File, unifiedStyleText?: string) => {
     if (!projectId) return;
     await switchTemplateModeWithUpload(projectId, file, unifiedStyleText);
-    navigate(`/project/${projectId}/preview`, { replace: true });
+    navigate(`/project/${projectId}/preview`, { replace: true, state: previewState });
   };
 
   const pickerPage = pages.find((p) => (p.id || p.page_id) === pickerPageId) || null;
@@ -392,7 +395,7 @@ export const TemplateSetupPage: React.FC = () => {
               variant="ghost"
               size="sm"
               icon={<ArrowLeft size={16} />}
-              onClick={() => navigate(`/project/${projectId}/detail`)}
+              onClick={() => navigate(`/project/${projectId}/outline`)}
             >
               <span className="hidden sm:inline">{t('ts.back')}</span>
             </Button>
@@ -432,7 +435,7 @@ export const TemplateSetupPage: React.FC = () => {
               variant="primary"
               size="sm"
               icon={<ArrowRight size={16} />}
-              onClick={() => navigate(`/project/${projectId}/preview`)}
+              onClick={() => navigate(`/project/${projectId}/preview`, { state: previewState })}
             >
               <span className="hidden sm:inline">{t('ts.next')}</span>
             </Button>

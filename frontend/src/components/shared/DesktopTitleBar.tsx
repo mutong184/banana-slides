@@ -5,7 +5,7 @@ import { Settings, ImagePlus, FolderOpen, Globe, Sun, Moon, Monitor, ChevronDown
 import { useTheme } from '@/hooks/useTheme';
 import { useT } from '@/hooks/useT';
 import { DESKTOP_TITLEBAR_HEIGHT, isDesktop } from '@/utils';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/edit-banana.jpg';
 
 const titleBarI18n = {
   zh: {
@@ -121,7 +121,7 @@ export function DesktopTitleBar() {
       >
         <img src={logoUrl} alt="" style={{ width: 18, height: 18, display: 'block', flexShrink: 0 }} />
         <span style={{ fontSize: 13, fontWeight: 600, lineHeight: '18px', color: isDark ? '#e4e4e7' : '#374151', letterSpacing: '0.2px' }}>
-          Banana Slides
+          PPT Edit
         </span>
       </div>
 

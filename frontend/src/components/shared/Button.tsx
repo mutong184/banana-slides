@@ -18,14 +18,14 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-banana-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#75a18f] focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation';
 
   const variants = {
-    primary: 'bg-gradient-to-r from-banana-500 to-banana-600 text-black hover:shadow-yellow hover:-translate-y-0.5 active:translate-y-0 shadow-md',
-    secondary: 'bg-white dark:bg-background-secondary border border-banana-500 text-black dark:text-foreground-primary hover:bg-banana-50 dark:hover:bg-background-hover',
+    primary: 'bg-gradient-to-r from-[#3479aa] to-[#286c94] text-white hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 shadow-[0_6px_16px_rgba(52,121,170,0.22)]',
+    secondary: 'bg-white dark:bg-background-secondary border border-[#9fc2da] text-[#365b76] dark:text-foreground-primary hover:bg-[#edf5fb] dark:hover:bg-background-hover',
     ghost: 'bg-transparent text-gray-700 dark:text-foreground-secondary hover:bg-gray-100 dark:hover:bg-background-secondary',
   };
-  
+
   const sizes = {
     sm: 'h-8 px-3 text-sm',
     md: 'h-10 px-6 text-base',

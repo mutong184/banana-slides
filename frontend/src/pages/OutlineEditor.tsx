@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, ArrowRight, Plus, FileText, Sparkle, Download, Upload, PanelLeftClose, PanelLeftOpen, ChevronDown, Settings2 } from 'lucide-react';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/edit-banana.jpg';
 import { useT } from '@/hooks/useT';
 import PresetCapsules from '@/components/shared/PresetCapsules';
 
 // 组件内翻译
 const outlineI18n = {
   zh: {
-    home: { title: '蕉幻' },
+    home: { title: 'PPT Edit' },
     outline: {
       title: "编辑大纲", pageCount: "共 {{count}} 页", addPage: "添加页面",
       generateDescriptions: "生成描述", generating: "生成中...", chapter: "章节",
+        preparingImages: "正在生成页面描述，即将进入图片生成...",
       page: "第 {{num}} 页", titleLabel: "标题", keyPoints: "要点",
       keyPointsPlaceholder: "要点（每行一个）", addKeyPoint: "添加要点",
       deletePage: "删除页面", confirmDeletePage: "确定要删除这一页吗？",
@@ -55,10 +56,11 @@ const outlineI18n = {
     }
   },
   en: {
-    home: { title: 'Banana Slides' },
+    home: { title: 'PPT Edit' },
     outline: {
       title: "Edit Outline", pageCount: "{{count}} pages", addPage: "Add Page",
       generateDescriptions: "Generate Descriptions", generating: "Generating...", chapter: "Chapter",
+        preparingImages: "Generating page descriptions, then opening image generation...",
       page: "Page {{num}}", titleLabel: "Title", keyPoints: "Key Points",
       keyPointsPlaceholder: "Key points (one per line)", addKeyPoint: "Add Key Point",
       deletePage: "Delete Page", confirmDeletePage: "Are you sure you want to delete this page?",
@@ -173,6 +175,7 @@ export const OutlineEditor: React.FC = () => {
     deletePageById,
     addNewPage,
     generateOutlineStream,
+    generateDescriptions,
     isGlobalLoading,
     outlineStreamingProjectIds,
   } = useProjectStore();
@@ -185,6 +188,13 @@ export const OutlineEditor: React.FC = () => {
   const [isAiRefining, setIsAiRefining] = useState(false);
   const [previewFileId, setPreviewFileId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [isPreparingImages, setIsPreparingImages] = useState(false);
+  const [preparingImagesProgress, setPreparingImagesProgress] = useState({
+    total: 100,
+    completed: 8,
+    percent: 8,
+    messages: ['正在准备页面描述…'],
+  });
 
   // Skeleton fade-out: keep it mounted briefly after streaming ends
   const [skeletonVisible, setSkeletonVisible] = useState(false);
@@ -425,6 +435,96 @@ export const OutlineEditor: React.FC = () => {
     await doGenerate();
   };
 
+  const handleContinueToImages = async () => {
+    if (!currentProject || !projectId || isPreparingImages) return;
+
+    try {
+      setIsPreparingImages(true);
+      setPreparingImagesProgress({
+        total: 100,
+        completed: 8,
+        percent: 8,
+        messages: ['正在保存大纲内容…'],
+      });
+
+      if (isInputDirty && !isBlankProject) {
+        const field = currentProject.creation_type === 'outline'
+          ? 'outline_text'
+          : currentProject.creation_type === 'descriptions'
+            ? 'description_text'
+            : 'idea_prompt';
+        await updateProject(projectId, { [field]: inputText } as any);
+        setIsInputDirty(false);
+      }
+
+      // 先保存用户在卡片中修改的标题、要点和顺序，再把最新大纲交给描述生成服务。
+      await saveAllPages();
+      setPreparingImagesProgress((progress) => ({
+        ...progress,
+        completed: 22,
+        percent: 22,
+        messages: [...progress.messages, '大纲已保存，正在检查页面描述…'],
+      }));
+
+      const hasDescription = (page: Page) => {
+        const content: any = page.description_content;
+        return typeof content === 'string'
+          ? Boolean(content.trim())
+          : Boolean(content && typeof content.text === 'string' && content.text.trim());
+      };
+
+      // 描述页不再展示：点击下一步后在后台完成页面描述，再直接进入图片生成。
+      if (currentProject.pages.length === 0) {
+        throw new Error('请先生成至少一页大纲，再继续生成图片。');
+      }
+      if (!currentProject.pages.every(hasDescription)) {
+        setPreparingImagesProgress((progress) => ({
+          ...progress,
+          completed: 35,
+          percent: 35,
+          messages: [...progress.messages, '正在生成页面描述…'],
+        }));
+        await generateDescriptions('default');
+
+        // 并行描述模式的 store 调用会先返回 task，再由后台轮询；这里等待服务端完成，
+        // 确保图片页打开时每一页都有可用的描述。
+        const deadline = Date.now() + 10 * 60 * 1000;
+        while (Date.now() < deadline) {
+          const latest = useProjectStore.getState().currentProject;
+          if (latest?.pages.length && latest.pages.every(hasDescription)) break;
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          await syncProject(projectId);
+        }
+        const latest = useProjectStore.getState().currentProject;
+        if (!latest?.pages.length || !latest.pages.every(hasDescription)) {
+          throw new Error('页面描述生成超时，请重试。');
+        }
+      }
+
+      setPreparingImagesProgress((progress) => ({
+        ...progress,
+        completed: 92,
+        percent: 92,
+        messages: [...progress.messages, '页面描述完成，正在进入图片生成…'],
+      }));
+
+      navigate(
+        currentProject.template_mode === 'multi'
+          ? `/project/${projectId}/template-setup`
+          : `/project/${projectId}/preview`,
+        {
+          state: {
+            ...((location.state as Record<string, unknown> | null) || {}),
+            autoGenerateImages: true,
+          },
+        },
+      );
+    } catch (error: any) {
+      setIsPreparingImages(false);
+      show({ message: error?.message || '页面描述生成失败，请重试。', type: 'error' });
+    }
+  };
+
   useEffect(() => {
     if (!currentProject?.id || currentProject.pages.length > 0 || isOutlineStreaming) return;
     if (!['idea', 'outline', 'descriptions'].includes(currentProject.creation_type || 'idea')) return;
@@ -512,6 +612,10 @@ export const OutlineEditor: React.FC = () => {
     return <Loading fullscreen message={t('outline.messages.loadingProject')} />;
   }
 
+  if (isPreparingImages) {
+    return <Loading fullscreen message={t('outline.preparingImages')} progress={preparingImagesProgress} />;
+  }
+
   if (isGlobalLoading && !isOutlineStreaming) {
     return <Loading fullscreen message={t('outline.messages.generatingOutline')} />;
   }
@@ -564,21 +668,8 @@ export const OutlineEditor: React.FC = () => {
               variant="primary"
               size="sm"
               icon={<ArrowRight size={16} className="md:w-[18px] md:h-[18px]" />}
-              onClick={async () => {
-                if (isInputDirty && projectId && currentProject && !isBlankProject) {
-                  const field = currentProject.creation_type === 'outline'
-                    ? 'outline_text'
-                    : currentProject.creation_type === 'descriptions'
-                      ? 'description_text'
-                      : 'idea_prompt';
-                  try {
-                    await updateProject(projectId, { [field]: inputText } as any);
-                  } catch (e) {
-                    console.error('自动保存失败:', e);
-                  }
-                }
-                navigate(`/project/${projectId}/detail`);
-              }}
+              onClick={handleContinueToImages}
+              disabled={isPreparingImages || isOutlineStreaming || currentProject.pages.length === 0}
               className="text-xs md:text-sm"
             >
               <span className="hidden sm:inline">{t('common.next')}</span>
@@ -638,7 +729,7 @@ export const OutlineEditor: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setSettingsOpen(!settingsOpen)}
-                icon={<span className="relative"><Settings2 size={16} className="md:w-[18px] md:h-[18px]" />{outlineRequirements && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-banana-400" />}</span>}
+                icon={<span className="relative"><Settings2 size={16} className="md:w-[18px] md:h-[18px]" />{outlineRequirements && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#75a18f]" />}</span>}
                 title={t('outline.outlineRequirements')}
               />
               {settingsOpen && (
@@ -738,8 +829,8 @@ export const OutlineEditor: React.FC = () => {
             <div className="bg-white dark:bg-background-secondary rounded-card shadow-md border border-gray-100 dark:border-border-primary overflow-hidden">
               <div className="px-4 py-2.5 flex items-center gap-2 border-b border-gray-100 dark:border-border-secondary">
                 {currentProject.creation_type === 'idea'
-                  ? <Sparkle size={14} className="text-banana-500 flex-shrink-0" />
-                  : <FileText size={14} className="text-banana-500 flex-shrink-0" />}
+                  ? <Sparkle size={14} className="text-[#3479aa] flex-shrink-0" />
+                  : <FileText size={14} className="text-[#3479aa] flex-shrink-0" />}
                 <span className="text-xs font-medium text-gray-500 dark:text-foreground-tertiary">{inputLabel}</span>
                 <div className="ml-auto flex items-center gap-1">
                   <button
@@ -778,7 +869,7 @@ export const OutlineEditor: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsPanelOpen(true)}
-            className="hidden md:flex absolute left-0 top-6 z-10 items-center justify-center w-6 h-14 bg-white dark:bg-background-secondary border border-l-0 border-gray-200 dark:border-border-primary rounded-r-lg shadow-md text-gray-400 hover:text-banana-500 hover:border-banana-300 dark:hover:border-banana-500/40 hover:shadow-lg transition-all"
+            className="hidden md:flex absolute left-0 top-6 z-10 items-center justify-center w-6 h-14 bg-white dark:bg-background-secondary border border-l-0 border-gray-200 dark:border-border-primary rounded-r-lg shadow-md text-gray-400 hover:text-[#3479aa] hover:border-[#9fc2da] dark:hover:border-[#3479aa]/40 hover:shadow-lg transition-all"
           >
             <PanelLeftOpen size={14} />
           </button>
@@ -789,8 +880,8 @@ export const OutlineEditor: React.FC = () => {
           <div className="bg-white dark:bg-background-secondary rounded-card shadow-md border border-gray-100 dark:border-border-primary overflow-hidden">
             <div className="px-4 py-2.5 flex items-center gap-2 border-b border-gray-100 dark:border-border-secondary">
               {currentProject.creation_type === 'idea'
-                ? <Sparkle size={14} className="text-banana-500 flex-shrink-0" />
-                : <FileText size={14} className="text-banana-500 flex-shrink-0" />}
+                ? <Sparkle size={14} className="text-[#3479aa] flex-shrink-0" />
+                : <FileText size={14} className="text-[#3479aa] flex-shrink-0" />}
               <span className="text-xs font-medium text-gray-500 dark:text-foreground-tertiary">{inputLabel}</span>
             </div>
             <MarkdownTextarea
@@ -870,7 +961,7 @@ export const OutlineEditor: React.FC = () => {
                           <div className="flex-1 space-y-3">
                             <div className="flex items-center gap-2">
                               <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded" />
-                              <div className="h-4 w-16 bg-banana-100 dark:bg-banana-900/30 rounded" />
+                              <div className="h-4 w-16 bg-[#dcecf5] dark:bg-banana-900/30 rounded" />
                             </div>
                             <div className="h-5 w-2/3 bg-gray-200 dark:bg-gray-700 rounded" />
                             <div className="space-y-2">

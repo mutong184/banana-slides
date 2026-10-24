@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  /* 主色 - 黄色系 */
-  --banana-yellow: #FFD700;
-  --banana-yellow-light: #FFE44D;
-  --banana-yellow-dark: #FFC700;
-  --banana-yellow-pale: #FFF9E6;
+  /* PPT Edit 教学蓝绿视觉契约，与 main.html 保持一致 */
+  --banana-yellow: #3479AA;
+  --banana-yellow-light: #75A18F;
+  --banana-yellow-dark: #286C94;
+  --banana-yellow-pale: #EDF5F9;
 
   /* 中性色 - 黑白灰 */
   --black: #1A1A1A;
@@ -28,29 +28,29 @@
   --transition-slow: 350ms ease-in-out;
 
   /* 背景色 */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F5F5F5;
-  --bg-tertiary: #FAFAFA;
+  --bg-primary: #EEF3F7;
+  --bg-secondary: #F5F9FC;
+  --bg-tertiary: #EDF5F9;
   --bg-elevated: #FFFFFF;
-  --bg-hover: #F5F5F5;
+  --bg-hover: #E8F1F6;
 
   /* 文字色 */
-  --text-primary: #1A1A1A;
-  --text-secondary: #4A4A4A;
-  --text-tertiary: #757575;
+  --text-primary: #294F6C;
+  --text-secondary: #6D8799;
+  --text-tertiary: #8BA0AF;
 
   /* 边框色 */
-  --border-primary: #E5E5E5;
-  --border-secondary: #F0F0F0;
-  --border-hover: #D4D4D4;
+  --border-primary: #DCE7EF;
+  --border-secondary: #E8EFF4;
+  --border-hover: #BCD3E1;
 }
 
 .dark {
-  /* 主色 - 黄色系（深色模式下稍微调亮） */
-  --banana-yellow: #F5A623;
-  --banana-yellow-light: #FFD700;
-  --banana-yellow-dark: #E6930E;
-  --banana-yellow-pale: #2A2520;
+  /* 深色模式保留可读性，但仍使用 PPT Edit 蓝绿色调 */
+  --banana-yellow: #5D9BC0;
+  --banana-yellow-light: #8AB7A5;
+  --banana-yellow-dark: #3D7FA5;
+  --banana-yellow-pale: #203A4A;
 
   /* 中性色 - 深色模式 */
   --black: #F5F5F5;
@@ -181,4 +181,3 @@ body {
 .markdown-content {
   line-height: 1.6;
 }
-

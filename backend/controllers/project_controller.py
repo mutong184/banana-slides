@@ -36,6 +36,25 @@ logger = logging.getLogger(__name__)
 project_bp = Blueprint('projects', __name__, url_prefix='/api/projects')
 
 
+def _friendly_ai_error(error: Exception) -> str:
+    """将上游模型服务错误转换为用户可执行的中文提示。"""
+    message = str(error or '').strip()
+    normalized = message.lower()
+
+    if 'insufficient' in normalized or 'balance' in normalized or '余额不足' in message:
+        return 'AI 服务账户余额不足，请在当前模型服务平台充值后重试。'
+    if 'api key' in normalized or 'unauthorized' in normalized or '401' in normalized or '403' in normalized:
+        return 'AI 服务鉴权失败，请检查设置中的 API Key 和接口地址。'
+    if 'model' in normalized and ('not found' in normalized or 'does not exist' in normalized):
+        return '当前模型不可用，请在设置中更换可用的文本模型。'
+    if 'timeout' in normalized or 'timed out' in normalized:
+        return 'AI 服务响应超时，请稍后重试。'
+    if '400 bad request' in normalized:
+        return 'AI 服务请求被上游拒绝，请检查模型名称和接口地址配置。'
+
+    return message or 'AI 服务暂时不可用，请稍后重试。'
+
+
 def _get_required_project_content(data, creation_type):
     """Return normalized content for the selected creation mode.
 
@@ -547,7 +566,7 @@ def generate_outline(project_id):
     except Exception as e:
         db.session.rollback()
         logger.error(f"generate_outline failed: {str(e)}", exc_info=True)
-        return error_response('AI_SERVICE_ERROR', str(e), 503)
+        return error_response('AI_SERVICE_ERROR', _friendly_ai_error(e), 503)
 
 
 @project_bp.route('/<project_id>/generate/outline/stream', methods=['POST'])
@@ -653,7 +672,7 @@ def generate_outline_stream(project_id):
                 except Exception as rollback_exc:
                     logger.warning(f"Session rollback failed: {rollback_exc}", exc_info=True)
                 logger.error(f"generate_outline_stream failed: {str(e)}", exc_info=True)
-                yield _sse_event('error', {'message': '生成过程中发生内部错误'})
+                yield _sse_event('error', {'message': _friendly_ai_error(e)})
 
     return Response(
         stream_with_context(sse_generate()),
