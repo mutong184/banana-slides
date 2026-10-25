@@ -284,19 +284,6 @@ export const Home: React.FC = () => {
     loadTemplates();
   }, []);
 
-  // 首次访问自动弹出帮助模态框
-  useEffect(() => {
-    const hasSeenHelp = localStorage.getItem('hasSeenHelpModal');
-    if (!hasSeenHelp) {
-      // 延迟500ms打开，让页面先渲染完成
-      const timer = setTimeout(() => {
-        setIsHelpModalOpen(true);
-        localStorage.setItem('hasSeenHelpModal', 'true');
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const action = searchParams.get('action');
