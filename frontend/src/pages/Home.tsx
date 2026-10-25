@@ -38,6 +38,21 @@ const dataUrlToFile = async (dataUrl: string, fileName: string, type?: string): 
 // 支持作为参考文件上传的文档扩展名（与后端 file_parser_service 保持一致）
 const ALLOWED_DOC_EXTENSIONS = ['pdf', 'docx', 'pptx', 'doc', 'ppt', 'xlsx', 'xls', 'csv', 'txt', 'md'];
 
+// 首页默认使用“小学科学探究”模板，避免用户进入页面后处于未选择模板的状态。
+const DEFAULT_PRESET_TEMPLATE_ID = '1';
+
+const readStoredTemplateSelection = (): { templateId?: string; dataUrl?: string } | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem('edit-ppt-template-selection');
+    if (!raw) return null;
+    const value = JSON.parse(raw);
+    return value && typeof value === 'object' ? value : null;
+  } catch {
+    return null;
+  }
+};
+
 // 页面特有翻译 - AI 可以直接看到所有文案，保留原始 key 结构
 const homeI18n = {
   zh: {
@@ -230,8 +245,17 @@ export const Home: React.FC = () => {
     else setFreeContent(value);
   };
   const [selectedTemplate, setSelectedTemplate] = useState<File | null>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [selectedPresetTemplateId, setSelectedPresetTemplateId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(() => {
+    const stored = readStoredTemplateSelection();
+    return stored?.templateId && !/^\d+$/.test(stored.templateId) ? stored.templateId : null;
+  });
+  const [selectedPresetTemplateId, setSelectedPresetTemplateId] = useState<string | null>(() => {
+    const stored = readStoredTemplateSelection();
+    if (stored?.dataUrl) return null;
+    return stored?.templateId && /^\d+$/.test(stored.templateId)
+      ? stored.templateId
+      : DEFAULT_PRESET_TEMPLATE_ID;
+  });
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [isMaterialCenterOpen, setIsMaterialCenterOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -263,6 +287,17 @@ export const Home: React.FC = () => {
   useEffect(() => {
     sessionStorage.setItem('home-draft-tab', activeTab);
   }, [activeTab]);
+
+  // 将默认模板同步到教学情境入口使用的 sessionStorage，保证离开首页后
+  // 点击“应用到 PPT 需求”仍能带上同一张模板图。
+  useEffect(() => {
+    const stored = readStoredTemplateSelection();
+    if (!stored || (!stored.templateId && !stored.dataUrl)) {
+      sessionStorage.setItem('edit-ppt-template-selection', JSON.stringify({
+        templateId: DEFAULT_PRESET_TEMPLATE_ID,
+      }));
+    }
+  }, []);
 
 
   // 检查是否有当前项目 & 加载用户模板
