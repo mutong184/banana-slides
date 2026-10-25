@@ -329,7 +329,7 @@ import { getImageUrl } from '@/api/client';
 import { getPageImageVersions, setCurrentImageVersion, updateProject, uploadTemplate, exportPPTX as apiExportPPTX, exportPDF as apiExportPDF, exportImages as apiExportImages, exportVideo as apiExportVideo, getSettings, getElevenLabsVoices, updateSettings } from '@/api/endpoints';
 import type { ImageVersion, DescriptionContent, ExportExtractorMethod, ExportInpaintMethod, Page, NarrationConfig } from '@/types';
 import { normalizeErrorMessage } from '@/utils';
-import { convertPdfToEditablePpt } from '@/api/codiaPdfToPpt';
+import { convertProjectToEditablePpt } from '@/api/codiaPdfToPpt';
 
 const VIDEO_VOICE_OPTIONS = [
   { group: '中文', voices: [
@@ -1672,30 +1672,15 @@ export const SlidePreview: React.FC = () => {
 
   const handleCodiaExport = async () => {
     if (!projectId || !currentProject || isCodiaExporting) return;
-    // Codia credentials are kept on the backend and loaded from .env.
-    const apiKey = '';
-
     const pageIds = getSelectedPageIdsForExport();
-    const pageCount = pageIds?.length || currentProject.pages.length;
     setIsCodiaExporting(true);
     setCodiaProgress(3);
-    setCodiaProgressMessage('正在准备 PDF…');
+    setCodiaProgressMessage('正在由服务器准备 PDF…');
     try {
-      const pdfResult = await apiExportPDF(projectId, pageIds);
-      const downloadUrl = pdfResult.data?.download_url || pdfResult.data?.download_url_absolute;
-      if (!downloadUrl) throw new Error('系统没有返回 PDF 下载地址');
-
-      setCodiaProgress(6);
-      setCodiaProgressMessage('正在下载 PDF…');
-      const pdfResponse = await fetch(downloadUrl);
-      if (!pdfResponse.ok) throw new Error(`PDF 下载失败（HTTP ${pdfResponse.status}）`);
-      const pdfBlob = await pdfResponse.blob();
-      const pptUrl = await convertPdfToEditablePpt({
-        apiKey: apiKey || undefined,
-        pdf: pdfBlob,
-        fileName: `${currentProject.project_title || 'teaching-deck'}.pdf`,
+      const pptUrl = await convertProjectToEditablePpt({
+        projectId,
+        pageIds,
         title: currentProject.project_title || '教学课件',
-        pageCount,
         onProgress: (progress, message) => {
           setCodiaProgress(progress);
           setCodiaProgressMessage(message);

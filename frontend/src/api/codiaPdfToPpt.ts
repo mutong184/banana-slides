@@ -1,3 +1,5 @@
+import apiClient from './client';
+
 const CODIA_PROXY_BASE = '/api/codia';
 
 export interface CodiaPdfToPptOptions {
@@ -21,6 +23,13 @@ interface CodiaTask {
   status?: string;
   progress?: number;
   result?: { ppt_url?: string; pages?: unknown[] };
+}
+
+export interface CodiaProjectExportOptions {
+  projectId: string;
+  pageIds?: string[];
+  title?: string;
+  onProgress?: (progress: number, message: string) => void;
 }
 
 /**
@@ -59,11 +68,88 @@ const codiaFetch = (apiKey: string | undefined, path: string, init: RequestInit 
   headers.set('Accept', 'application/json');
   const useDirectApi = Boolean(apiKey?.trim());
   if (useDirectApi) headers.set('Authorization', `Bearer ${apiKey!.trim()}`);
+  if (!useDirectApi) {
+    const accessCode = window.localStorage.getItem('banana-access-code');
+    if (accessCode) headers.set('X-Access-Code', accessCode);
+  }
   return fetch(`${useDirectApi ? 'https://openapi.codia.ai/v2/open' : CODIA_PROXY_BASE}${path}`, {
     ...init,
     headers,
   });
 };
+
+const pollCodiaTask = async (
+  apiKey: string | undefined,
+  taskId: string,
+  onProgress?: (progress: number, message: string) => void,
+  initialProgress = 18,
+): Promise<string> => {
+  const deadline = Date.now() + 20 * 60 * 1000;
+  let lastProgress = initialProgress;
+  let firstCheck = true;
+
+  while (Date.now() < deadline) {
+    // Query once immediately after task creation. Subsequent checks use a
+    // shorter interval so the UI notices completion without adding avoidable
+    // idle time after Codia finishes.
+    if (!firstCheck) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    firstCheck = false;
+
+    const current = await readCodiaResponse<CodiaTask>(
+      await codiaFetch(apiKey, `/tasks/${encodeURIComponent(taskId)}`),
+    );
+    const status = String(current.status || '').toLowerCase();
+    const reported = typeof current.progress === 'number' ? current.progress : 0;
+    const progress = Math.min(98, Math.max(lastProgress, initialProgress + Math.round(reported * 0.8)));
+    lastProgress = progress;
+    onProgress?.(progress, status === 'succeeded' ? '正在整理下载地址…' : `正在转换 PPTX（${Math.round(reported)}%）…`);
+
+    if (['failed', 'error', 'cancelled', 'canceled'].includes(status)) {
+      throw new Error('PPT 转换失败，请检查导出配置或 PDF 内容。');
+    }
+    if (['succeeded', 'completed', 'success'].includes(status)) {
+      const pptUrl = current.result?.ppt_url;
+      if (!pptUrl) throw new Error('转换完成，但响应中没有 PPTX 下载地址');
+      onProgress?.(100, 'PPTX 已生成');
+      return pptUrl;
+    }
+  }
+
+  throw new Error('PPT 转换超时，请稍后重试。');
+};
+
+/**
+ * Generate the project's PDF and submit it to Codia entirely on the server.
+ * The browser sends page ids only; it no longer downloads and re-uploads PDF.
+ */
+export async function convertProjectToEditablePpt(options: CodiaProjectExportOptions): Promise<string> {
+  const { projectId, pageIds, title, onProgress } = options;
+  const idempotencyKey = `ppt-edit-${crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`}`;
+  onProgress?.(3, '正在由服务器准备 PDF…');
+
+  let response;
+  try {
+    response = await apiClient.post<{
+      data?: { task_id?: string };
+      task_id?: string;
+      message?: string;
+    }>(
+      `/api/codia/projects/${encodeURIComponent(projectId)}/pdf-to-ppt`,
+      { page_ids: pageIds, title },
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    );
+  } catch {
+    throw new Error('服务器生成 PDF 或创建导出任务失败，请稍后重试。');
+  }
+
+  const payload = response.data;
+  const taskId = payload.data?.task_id || payload.task_id;
+  if (!taskId) throw new Error('导出任务创建成功但没有返回任务编号');
+  onProgress?.(18, '正在转换 PPTX…');
+  return pollCodiaTask(undefined, taskId, onProgress, 18);
+}
 
 /**
  * 将已经生成的 PDF 交给 Codia pdf_to_ppt，返回可下载的 PPTX 地址。
@@ -104,29 +190,5 @@ export async function convertPdfToEditablePpt(options: CodiaPdfToPptOptions): Pr
   );
   if (!task.task_id) throw new Error('导出任务创建成功但没有返回任务编号');
 
-  const deadline = Date.now() + 20 * 60 * 1000;
-  let lastProgress = 18;
-  while (Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, 1800));
-    const current = await readCodiaResponse<CodiaTask>(
-      await codiaFetch(apiKey, `/tasks/${encodeURIComponent(task.task_id)}`),
-    );
-    const status = String(current.status || '').toLowerCase();
-    const reported = typeof current.progress === 'number' ? current.progress : 0;
-    const progress = Math.min(98, Math.max(lastProgress, 18 + Math.round(reported * 0.8)));
-    lastProgress = progress;
-    onProgress?.(progress, status === 'succeeded' ? '正在整理下载地址…' : `正在转换 PPTX（${Math.round(reported)}%）…`);
-
-    if (['failed', 'error', 'cancelled', 'canceled'].includes(status)) {
-      throw new Error('PPT 转换失败，请检查导出配置或 PDF 内容。');
-    }
-    if (['succeeded', 'completed', 'success'].includes(status)) {
-      const pptUrl = current.result?.ppt_url;
-      if (!pptUrl) throw new Error('转换完成，但响应中没有 PPTX 下载地址');
-      onProgress?.(100, 'PPTX 已生成');
-      return pptUrl;
-    }
-  }
-
-  throw new Error('PPT 转换超时，请稍后重试。');
+  return pollCodiaTask(apiKey, task.task_id, onProgress, 18);
 }

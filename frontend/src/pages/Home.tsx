@@ -285,6 +285,14 @@ export const Home: React.FC = () => {
   }, []);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  // 教学情境入口需要在后台创建项目。先显示过渡页，避免用户短暂看到首页，
+  // 创建完成后直接进入大纲编辑页。
+  const [isTeachingContextLaunch, setIsTeachingContextLaunch] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('action') === 'teaching-context'
+      && Boolean(sessionStorage.getItem('edit-ppt-context'));
+  });
   useEffect(() => {
     const action = searchParams.get('action');
     if (action === 'material-generate') {
@@ -630,6 +638,7 @@ export const Home: React.FC = () => {
     if (!raw) return;
 
     teachingLaunchRef.current = true;
+    setIsTeachingContextLaunch(true);
     let payload: {
       context?: Record<string, unknown> | string;
       notes?: Record<string, unknown> | string;
@@ -641,6 +650,7 @@ export const Home: React.FC = () => {
     try {
       payload = JSON.parse(raw);
     } catch {
+      setIsTeachingContextLaunch(false);
       show({ message: '教学情境数据无法读取，请重新采集后再试。', type: 'error' });
       return;
     }
@@ -712,6 +722,7 @@ export const Home: React.FC = () => {
         navigate(`/project/${projectId}/outline`);
       } catch (error: any) {
         teachingLaunchRef.current = false;
+        setIsTeachingContextLaunch(false);
         show({ message: error?.message || '创建 PPT 项目失败，请重试。', type: 'error' });
       }
     })();
@@ -897,6 +908,25 @@ export const Home: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isTeachingContextLaunch) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#eef3f7] via-white to-[#e8f1f6] flex items-center justify-center px-6">
+        <div className="w-full max-w-md rounded-3xl border border-white/80 bg-white/85 p-8 text-center shadow-xl shadow-[#3479aa]/10 backdrop-blur-xl">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#286c94] via-[#3479aa] to-[#75a18f] shadow-lg shadow-[#3479aa]/20">
+            <FileEdit className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-xl font-semibold text-[#1f4056]">正在准备 PPT 大纲</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">正在载入教学情境并创建项目，完成后将直接进入大纲编辑。</p>
+          <div className="mt-7 h-2 overflow-hidden rounded-full bg-[#e8f1f6]">
+            <div className="h-full w-2/5 animate-pulse rounded-full bg-gradient-to-r from-[#286c94] to-[#75a18f]" />
+          </div>
+          <p className="mt-3 text-xs text-slate-400">请稍候…</p>
+          <ToastContainer />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#eef3f7] via-white to-[#e8f1f6] dark:from-background-primary dark:via-background-primary dark:to-background-primary relative overflow-hidden">
