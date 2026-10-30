@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Star, GitFork } from 'lucide-react';
+import { isStaticReplay } from '@/demo/staticReplay';
 
 const GITHUB_REPO = 'Anionex/banana-slides';
 const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
@@ -14,6 +15,7 @@ export const GithubRepoCard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isStaticReplay) { setLoading(false); return; }
     const fetchStats = async () => {
       try {
         // 先尝试从 localStorage 读取缓存

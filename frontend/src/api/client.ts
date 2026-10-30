@@ -1,3 +1,4 @@
+import { isStaticReplay, staticReplayAdapter } from '@/demo/staticReplay';
 import axios from 'axios';
 import { isDesktop } from '@/utils';
 import i18n from '@/i18n';
@@ -92,6 +93,7 @@ export function triggerDownload(relativeOrAbsoluteUrl: string, filename?: string
 
 // 创建 axios 实例
 export const apiClient = axios.create({
+  ...(isStaticReplay ? { adapter: staticReplayAdapter } : {}),
   timeout: 300000, // 5分钟超时（AI生成可能很慢）
 });
 

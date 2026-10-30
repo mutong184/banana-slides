@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isStaticReplay, getReplayPendingTask } from '@/demo/staticReplay';
 import type { Project, TemplateAsset, Task } from '@/types';
 import * as api from '@/api/endpoints';
 import {
@@ -389,6 +390,13 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         set({ currentProject: project });
         // 确保 localStorage 中保存了项目ID
         localStorage.setItem('currentProjectId', project.id!);
+        if (isStaticReplay && Object.keys(get().pageGeneratingTasks).length === 0) {
+          const pending = await getReplayPendingTask();
+          if (pending) {
+            set({ pageGeneratingTasks: Object.fromEntries(pending.pageIds.map(id => [id, pending.id])) });
+            get().pollImageTask(pending.id, pending.pageIds);
+          }
+        }
       }
     } catch (error: any) {
       // 提取更详细的错误信息

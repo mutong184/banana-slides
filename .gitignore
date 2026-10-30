@@ -105,3 +105,9 @@ frontend/cap-real.mjs
 
 # Isolated issue regression evidence
 /output/issue-verification/
+
+# Reproducible static replay assets and instructions
+!STATIC-DEMO.md
+!frontend/public/static-demo/editable-example.pptx
+/frontend/dist-demo/
+/frontend/verify-static-demo.tmp.mjs

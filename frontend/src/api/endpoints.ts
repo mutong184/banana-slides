@@ -1,3 +1,4 @@
+import { isStaticReplay, loadReplaySnapshot, replayDescriptions, replayDelay } from '@/demo/staticReplay';
 import { apiClient, getBaseURL } from './client';
 import type { Project, Task, ApiResponse, CreateProjectRequest, Page, Material, TemplateAsset } from '@/types';
 import type { Settings } from '../types/index';
@@ -156,6 +157,15 @@ export const generateOutlineStream = async (
   language?: OutputLanguage,
   lockPageCount?: boolean,
 ): Promise<void> => {
+  if (isStaticReplay) {
+    const snapshot = await loadReplaySnapshot();
+    for (const page of snapshot.project.pages) {
+      await replayDelay(80);
+      callbacks.onPage({ ...page.outline_content!, part: page.part, index: page.order_index });
+    }
+    callbacks.onDone({ total: snapshot.project.pages.length, pages: snapshot.project.pages });
+    return;
+  }
   const lang = language || await getStoredOutputLanguage();
   const accessCode = localStorage.getItem('banana-access-code');
 
@@ -269,6 +279,14 @@ export const generateDescriptionsStream = async (
   language?: OutputLanguage,
   detailLevel?: string,
 ): Promise<void> => {
+  if (isStaticReplay) {
+    const pages = await replayDescriptions(page => {
+      const content = page.description_content as { text?: string; extra_fields?: Record<string, string> };
+      callbacks.onDescription({ page_index: page.order_index, page_id: page.page_id, text: content.text || '', extra_fields: content.extra_fields });
+    });
+    callbacks.onDone({ total: pages.length, pages });
+    return;
+  }
   const lang = language || await getStoredOutputLanguage();
   const accessCode = localStorage.getItem('banana-access-code');
 

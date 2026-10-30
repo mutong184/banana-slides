@@ -1,3 +1,4 @@
+import { isStaticReplay } from '@/demo/staticReplay';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, ArrowRight, Plus, FileText, Sparkle, Download, Upload, PanelLeftClose, PanelLeftOpen, ChevronDown, Settings2 } from 'lucide-react';
@@ -195,6 +196,14 @@ export const OutlineEditor: React.FC = () => {
     percent: 8,
     messages: ['正在准备页面描述…'],
   });
+
+  useEffect(() => {
+    if (!isStaticReplay || !isPreparingImages || !currentProject?.pages.length) return;
+    const completed = currentProject.pages.filter(page => page.description_content).length;
+    const percent = 35 + Math.round(completed / currentProject.pages.length * 55);
+    setPreparingImagesProgress({ total: 100, completed: percent, percent,
+      messages: [`正在生成页面描述（${completed}/${currentProject.pages.length}）…`] });
+  }, [isPreparingImages, currentProject?.pages]);
 
   // Skeleton fade-out: keep it mounted briefly after streaming ends
   const [skeletonVisible, setSkeletonVisible] = useState(false);
@@ -463,7 +472,7 @@ export const OutlineEditor: React.FC = () => {
         ...progress,
         completed: 22,
         percent: 22,
-        messages: [...progress.messages, '大纲已保存，正在检查页面描述…'],
+        messages: [...progress.messages, isStaticReplay ? '大纲已确认，正在准备页面描述…' : '大纲已保存，正在检查页面描述…'],
       }));
 
       const hasDescription = (page: Page) => {

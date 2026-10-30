@@ -1,3 +1,4 @@
+import { isStaticReplay } from '@/demo/staticReplay';
 // TODO: split components
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
@@ -1675,7 +1676,7 @@ export const SlidePreview: React.FC = () => {
     const pageIds = getSelectedPageIdsForExport();
     setIsCodiaExporting(true);
     setCodiaProgress(3);
-    setCodiaProgressMessage('正在由服务器准备 PDF…');
+    setCodiaProgressMessage(isStaticReplay ? '正在准备课件文件…' : '正在由服务器准备 PDF…');
     try {
       const pptUrl = await convertProjectToEditablePpt({
         projectId,
@@ -1689,7 +1690,7 @@ export const SlidePreview: React.FC = () => {
 
       triggerDownload(pptUrl);
       setShowEditablePptxDialog(false);
-      show({ message: '已生成可编辑 PPTX，下载已开始。', type: 'success' });
+      show({ message: isStaticReplay ? '可编辑 PPTX 已就绪，下载已开始。' : '已生成可编辑 PPTX，下载已开始。', type: 'success' });
     } catch (error: any) {
       const rawMessage = typeof error?.message === 'string' ? error.message : '';
       // Never expose provider names, endpoints, or credential details in the
@@ -2734,6 +2735,11 @@ export const SlidePreview: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowEditablePptxDialog(false)}>
           <div className="bg-white dark:bg-background-secondary rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold">{t('preview.editablePptxDialogTitle')}</h3>
+            {isStaticReplay && (
+              <p className="mt-3 mb-4 rounded-lg bg-[#edf5fa] p-3 text-sm leading-6 text-[#365b76]">
+                PPTX 文件支持在 PowerPoint 等软件中继续编辑。
+              </p>
+            )}
             {isCodiaExporting && (
               <div className="mb-4 rounded-xl border border-[#dce7ef] bg-[#f7fbfd] p-3">
                 <div className="flex items-center justify-between text-xs text-[#286c94] mb-2">

@@ -1,3 +1,4 @@
+import { isStaticReplay, replayEditableExport } from '@/demo/staticReplay';
 import apiClient from './client';
 
 const CODIA_PROXY_BASE = '/api/codia';
@@ -126,6 +127,7 @@ const pollCodiaTask = async (
  */
 export async function convertProjectToEditablePpt(options: CodiaProjectExportOptions): Promise<string> {
   const { projectId, pageIds, title, onProgress } = options;
+  if (isStaticReplay) return replayEditableExport(onProgress);
   const idempotencyKey = `ppt-edit-${crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`}`;
   onProgress?.(3, '正在由服务器准备 PDF…');
 

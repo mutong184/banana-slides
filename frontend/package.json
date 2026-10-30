@@ -17,7 +17,9 @@
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "dev:demo": "vite --mode static-demo --host 127.0.0.1 --port 3012 --strictPort",
+    "build:demo": "vite build --mode static-demo --base=/ --outDir dist-demo"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

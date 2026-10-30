@@ -71,7 +71,7 @@ export default defineConfig(({ mode }) => {
       hmr: {
         overlay: true, // 显示错误覆盖层
       },
-      proxy: {
+      proxy: mode === 'static-demo' ? {} : {
         // API 请求代理到后端（端口从环境变量 BACKEND_PORT 读取）
         '/api': {
           target: backendUrl,
