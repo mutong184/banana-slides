@@ -1,75 +1,63 @@
-import { useEffect } from 'react';
-import { BrowserRouter, HashRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
-import { Home } from './pages/Home';
-import { Landing } from './pages/Landing';
-import { History } from './pages/History';
-import { OutlineEditor } from './pages/OutlineEditor';
-import { TemplateSetupPage } from './pages/TemplateSetupPage';
-import { SlidePreview } from './pages/SlidePreview';
-import { EditPptEmbeddedPage } from './pages/EditPptEmbeddedPage';
-import { SettingsPage } from './pages/Settings';
-import { useProjectStore } from './store/useProjectStore';
-import { useToast, AccessCodeGuard, DesktopTitleBar, UpdateChecker } from './components/shared';
-import { getDesktopTopInset } from './components/shared/UpdateChecker';
-import { isDesktop } from '@/utils';
+import { useEffect, useRef } from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import { DemoProvider, useDemo } from "./demo";
+import { HomePage, HistoryPage } from "./pages/Home";
+import { OutlinePage } from "./pages/Outline";
+import { PreviewPage } from "./pages/Preview";
 
-// 页面描述现在由大纲页后台生成，旧地址只保留兼容跳转，避免再次展示“批量生成描述”页面。
-function LegacyDetailRedirect() {
-  const { projectId } = useParams<{ projectId: string }>();
-  return <Navigate to={projectId ? `/project/${projectId}/preview` : '/'} replace />;
-}
-
-function App() {
-  const { currentProject, syncProject, error, setError } = useProjectStore();
-  const { show, ToastContainer } = useToast();
-
-  // 恢复项目状态
+function HomeEntry() {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const demo = useDemo();
+  const started = useRef(false);
+  const applying = params.get("action") === "teaching-context";
   useEffect(() => {
-    const savedProjectId = localStorage.getItem('currentProjectId');
-    if (savedProjectId && !currentProject) {
-      syncProject();
-    }
-  }, [currentProject, syncProject]);
-
-  // 显示全局错误
-  useEffect(() => {
-    if (error) {
-      show({ message: error, type: 'error' });
-      setError(null);
-    }
-  }, [error, setError, show]);
-
-
-  return (
-    <>
-      <UpdateChecker />
-      <div style={isDesktop ? { paddingTop: `${getDesktopTopInset()}px` } : undefined}>
-        <AccessCodeGuard>
-          {(() => {
-            const Router = isDesktop ? HashRouter : BrowserRouter;
-            return (
-              <Router>
-                <DesktopTitleBar />
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/landing" element={<Landing />} />
-                  <Route path="/edit-ppt" element={<EditPptEmbeddedPage />} />
-                  <Route path="/history" element={<History />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/project/:projectId/outline" element={<OutlineEditor />} />
-                  <Route path="/project/:projectId/detail" element={<LegacyDetailRedirect />} />
-                  <Route path="/project/:projectId/template-setup" element={<TemplateSetupPage />} />
-                  <Route path="/project/:projectId/preview" element={<SlidePreview />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-                <ToastContainer />
-              </Router>
-            );
-          })()}
-        </AccessCodeGuard>
-      </div>
-    </>
+    if (!applying || started.current) return;
+    started.current = true;
+    demo.createProject();
+    sessionStorage.removeItem("edit-ppt-context");
+    navigate(`/project/${demo.project.id}/outline`, { replace: true });
+  }, [applying, demo, navigate]);
+  return applying ? (
+    <div className="status-screen">
+      <div className="spinner" />
+      <p>正在准备 PPT 大纲…</p>
+    </div>
+  ) : (
+    <HomePage />
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <DemoProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomeEntry />} />
+          <Route
+            path="/edit-ppt"
+            element={
+              <iframe
+                className="teaching-frame"
+                title="PPT Edit 多轮对话生成"
+                src="/edit-ppt/main.html"
+                allow="clipboard-read; clipboard-write"
+              />
+            }
+          />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/project/:projectId/outline" element={<OutlinePage />} />
+          <Route path="/project/:projectId/preview" element={<PreviewPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </DemoProvider>
+  );
+}
