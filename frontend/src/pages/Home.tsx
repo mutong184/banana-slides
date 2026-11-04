@@ -328,6 +328,7 @@ export const Home: React.FC = () => {
     return params.get('action') === 'teaching-context'
       && Boolean(sessionStorage.getItem('edit-ppt-context'));
   });
+  const [teachingLaunchError, setTeachingLaunchError] = useState('');
   useEffect(() => {
     const action = searchParams.get('action');
     if (action === 'material-generate') {
@@ -685,8 +686,7 @@ export const Home: React.FC = () => {
     try {
       payload = JSON.parse(raw);
     } catch {
-      setIsTeachingContextLaunch(false);
-      show({ message: '教学情境数据无法读取，请重新采集后再试。', type: 'error' });
+      setTeachingLaunchError('教学情境数据无法读取，请返回需求页重新确认。');
       return;
     }
 
@@ -756,9 +756,9 @@ export const Home: React.FC = () => {
         setSearchParams(nextSearchParams, { replace: true });
         navigate(`/project/${projectId}/outline`);
       } catch (error: any) {
-        teachingLaunchRef.current = false;
-        setIsTeachingContextLaunch(false);
-        show({ message: error?.message || '创建 PPT 项目失败，请重试。', type: 'error' });
+        // Stay on the transition page. Re-running this effect after a failed
+        // request could create duplicate projects and flash the homepage.
+        setTeachingLaunchError(error?.message || '创建 PPT 项目失败，请重试。');
       }
     })();
   }, [initializeProject, navigate, searchParams, setSearchParams, show, userTemplates]);
@@ -951,12 +951,16 @@ export const Home: React.FC = () => {
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#286c94] via-[#3479aa] to-[#75a18f] shadow-lg shadow-[#3479aa]/20">
             <FileEdit className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-xl font-semibold text-[#1f4056]">正在准备 PPT 大纲</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">正在载入教学情境并创建项目，完成后将直接进入大纲编辑。</p>
-          <div className="mt-7 h-2 overflow-hidden rounded-full bg-[#e8f1f6]">
+          <h1 className="text-xl font-semibold text-[#1f4056]">{teachingLaunchError ? '暂时无法创建课件' : '正在准备 PPT 大纲'}</h1>
+          <p role={teachingLaunchError ? 'alert' : undefined} className="mt-2 text-sm leading-6 text-slate-500">{teachingLaunchError || '正在载入教学情境并创建项目，完成后将直接进入大纲编辑。'}</p>
+          {!teachingLaunchError && <><div className="mt-7 h-2 overflow-hidden rounded-full bg-[#e8f1f6]">
             <div className="h-full w-2/5 animate-pulse rounded-full bg-gradient-to-r from-[#286c94] to-[#75a18f]" />
           </div>
-          <p className="mt-3 text-xs text-slate-400">请稍候…</p>
+          <p className="mt-3 text-xs text-slate-400">请稍候…</p></>}
+          {teachingLaunchError && <div className="mt-6 flex justify-center gap-3">
+            <Button variant="secondary" onClick={() => navigate('/edit-ppt')}>返回需求确认</Button>
+            <Button onClick={() => window.location.reload()}>重试创建课件</Button>
+          </div>}
           <ToastContainer />
         </div>
       </div>

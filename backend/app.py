@@ -36,6 +36,7 @@ from controllers.reference_file_controller import reference_file_bp
 from controllers.settings_controller import settings_bp
 from controllers.openai_oauth_controller import openai_oauth_bp
 from controllers.codia_controller import codia_bp
+from controllers.teaching_context_controller import teaching_context_bp
 from controllers import project_bp, page_bp, template_bp, user_template_bp, user_style_template_bp, export_bp, file_bp, style_bp, template_assets_bp, page_template_bp, template_mode_bp
 
 
@@ -161,6 +162,7 @@ def create_app():
     app.register_blueprint(settings_bp)
     app.register_blueprint(openai_oauth_bp)
     app.register_blueprint(codia_bp)
+    app.register_blueprint(teaching_context_bp)
     app.register_blueprint(style_bp)
 
     with app.app_context():
@@ -239,6 +241,10 @@ def create_app():
     @app.route('/edit-ppt/ppt-generator.js')
     def teaching_scenario_script():
         return send_file(teaching_scenario_root / 'ppt-generator.js')
+
+    @app.route('/edit-ppt/live-workflow.js')
+    def teaching_live_workflow_script():
+        return send_file(teaching_scenario_root / 'live-workflow.js')
 
     @app.route('/edit-ppt/edit-banana.jpg')
     def teaching_scenario_logo():
